@@ -6,45 +6,80 @@
 <meta name="theme-color" content="#0e1618">
 <title>Vase Forge</title>
 <style>
-:root{--bg:#0e1618;--panel:#142024;--line:#24383d;--ink:#e6efec;--mute:#8fa7a3;--glaze:#8fd0bd}
+:root{--bg:#dfe9e6;--panel:#fbfdfc;--ink:#13211f;--mute:#586e69;--line:#cfdcd8;--accent:#1f8a70;--on:#fff;--serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif}
+:root[data-theme=dark]{--bg:#0e1618;--panel:#142024;--ink:#e6efec;--mute:#8fa7a3;--line:#24383d;--accent:#8fd0bd;--on:#0b1a17}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
-#view{position:relative;flex:0 0 48vh;min-height:260px}
+body{background:var(--panel);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+#view{position:relative;flex:0 0 54vh;min-height:300px;background:var(--bg)}
 #c{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
-#stats{position:absolute;left:12px;bottom:10px;color:var(--mute);font-size:12px;pointer-events:none}
-h1{position:absolute;left:14px;top:10px;margin:0;font:600 22px Georgia,"Times New Roman",serif;letter-spacing:.01em;pointer-events:none}
-#panel{flex:1;overflow:auto;background:var(--panel);border-top:1px solid var(--line);padding:14px 16px 28px}
-.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:0 0 12px}
-.row label{color:var(--mute)}
-.row output{font-variant-numeric:tabular-nums}
-.row input{grid-column:1/3;width:100%;accent-color:var(--glaze)}
-.group{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
-button{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font:inherit;cursor:pointer}
-button:hover{border-color:var(--glaze)}
-button:focus-visible,input:focus-visible{outline:2px solid var(--glaze);outline-offset:2px}
-button.main{background:var(--glaze);color:#0b1a17;border-color:var(--glaze);font-weight:600}
-.sep{height:1px;background:var(--line);margin:6px 0 14px}
-.opt{display:flex;gap:14px;margin:0 0 16px;color:var(--mute)}
-.opt label{display:flex;gap:6px;align-items:center}
-@media(min-width:820px){body{flex-direction:row}#view{flex:1;min-height:0}#panel{flex:0 0 340px;border-top:0;border-left:1px solid var(--line)}}
+header{position:absolute;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 18px;pointer-events:none}
+header>*{pointer-events:auto}
+h1{margin:0;font:italic 400 32px/1 var(--serif);pointer-events:none}
+.util{display:flex;flex-wrap:wrap;gap:2px 16px}
+header .util{justify-content:flex-end}
+.util button{border:0;border-bottom:1px solid transparent;background:none;padding:4px 0;color:var(--mute);font:inherit;font-size:13px;cursor:pointer}
+header .util{gap:6px}header .util button{border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);padding:5px 13px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tools button{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.tools button:hover{border-color:var(--accent)}
+.tools svg{flex:none;width:18px;height:18px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.val{display:flex;align-items:baseline;gap:4px}
+.val input{width:64px;padding:1px 0;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:14px;text-align:right;-moz-appearance:textfield;appearance:textfield}
+.val input::-webkit-inner-spin-button,.val input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.val input:focus{border-color:var(--accent)}
+.val em{min-width:1.6em;font-style:normal;color:var(--mute);font-size:13px}
+.util button:hover{color:var(--accent);border-color:var(--accent)}
+#presets{position:absolute;left:0;right:0;bottom:30px;display:flex;justify-content:center;flex-wrap:wrap;gap:8px;padding:0 12px;pointer-events:none}
+#presets button{pointer-events:auto;display:flex;align-items:center;gap:7px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 13px 4px 9px;font:inherit;font-size:13px;cursor:pointer}
+#presets button:hover{border-color:var(--accent)}
+#presets svg{fill:var(--accent)}
+#stats{position:absolute;left:18px;bottom:8px;color:var(--mute);font-size:12px;pointer-events:none}
+#panel{flex:1;overflow:auto;padding:4px 22px 36px}
+h2{margin:24px 0 12px;padding-top:12px;border-top:1px solid var(--line);font:italic 400 19px/1.2 var(--serif)}
+#sliders>h2:first-child{border-top:0;margin-top:16px;padding-top:0}
+.row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 10px;margin:0 0 10px}
+.row output{color:var(--mute);font-variant-numeric:tabular-nums;font-size:13px}
+input[type=range]{grid-column:1/3;width:100%;height:22px;margin:0;background:none;-webkit-appearance:none;appearance:none}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line)}
+input[type=range]::-moz-range-track{height:2px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-7px;border-radius:50%;background:var(--accent);border:2px solid var(--panel)}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--panel)}
+.opt{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px}
+.opt label{position:relative;display:block}
+.opt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.opt span{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;transition:background .15s,border-color .15s}
+.opt span::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--mute)}
+.opt label:hover span{border-color:var(--accent)}
+.opt input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--on)}
+.opt input:checked+span::before{background:var(--on);border-color:var(--on)}
+.opt input:focus-visible+span{outline:2px solid var(--accent);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.opt span{transition:none}}
+#glz{width:32px;height:32px;padding:0;border:2px solid var(--line);border-radius:50%;background:none;cursor:pointer;grid-column:auto}#glz::-webkit-color-swatch-wrapper{padding:0}#glz::-webkit-color-swatch{border:0;border-radius:50%}#glz::-moz-color-swatch{border:0;border-radius:50%}
+#eh{width:84px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:right;grid-column:auto}
+.act{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:14px 0}
+.pill{font:inherit;cursor:pointer;background:none;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:8px 18px}
+.pill.main{background:var(--accent);color:var(--on)}
+.pill:hover{filter:brightness(1.12)}
+#inf{color:var(--mute);font-size:13px;margin-bottom:14px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(min-width:860px){body{flex-direction:row-reverse}#view{flex:1;min-height:0}#panel{flex:0 0 380px;border-right:1px solid var(--line)}#presets{bottom:38px}}
 </style>
 </head>
 <body>
-<div id="view"><canvas id="c"></canvas><h1>Vase Forge</h1><div id="stats"></div></div>
-<aside id="panel">
-  <div class="group" id="presets"></div>
-  <div id="sliders"></div>
-  <div class="opt">
-    <label><input type="checkbox" id="wire"> Wireframe</label>
-    <label><input type="checkbox" id="spin" checked> Auto-rotate</label>
-  </div>
-  <div class="sep"></div>
-  <div class="group">
-    <button class="main" id="stl">Download STL</button>
-    <button id="glb">Download GLB</button>
-  </div>
-  <div style="color:var(--mute);font-size:12px">STL is exported in millimetres with the vase standing on Z, ready for slicing. Wall and base are solid, so no supports are needed.</div>
+<div id="view"><canvas id="c"></canvas>
+  <header><h1>Vase Forge</h1>
+    <nav class="util"><button id="lang"></button><button id="theme"></button><button id="undo" data-i="undo"></button><button id="redo" data-i="redo"></button><button id="rnd" data-i="rnd"></button></nav></header>
+  <div id="presets"></div><div id="stats"></div></div>
+<aside id="panel"><div id="sliders"></div>
+  <h2 data-i="sLook"></h2>
+  <div class="opt"><label><input type="checkbox" id="wire"><span data-i="wire"></span></label><label><input type="checkbox" id="spin" checked><span data-i="spin"></span></label><label><input type="checkbox" id="cut"><span data-i="cut"></span></label><label><input type="checkbox" id="over"><span data-i="over"></span></label></div>
+  <div class="row"><label for="glz" data-i="glaze"></label><input type="color" id="glz" value="#8fd0bd"></div>
+  <h2 data-i="sOut"></h2>
+  <div class="row"><label for="eh" data-i="eh"></label><input type="number" id="eh" min="10" max="1000"></div>
+  <div class="act"><button class="pill main" id="stl" data-i="stl"></button><button class="pill" id="glb" data-i="glb"></button><button class="pill" id="obj" data-i="obj"></button></div>
+  <div id="inf"></div>
+  <nav class="tools"><button id="copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span data-i="copy"></span></button><button id="save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span data-i="save"></span></button><button id="load"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4l4 4M5 19h14"/></svg><span data-i="load"></span></button><button id="png"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4 4 3 3-2 4 3"/></svg><span data-i="png"></span></button><input type="file" id="file" accept=".json" hidden></nav>
 </aside>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -97,7 +132,7 @@ scene.add(new THREE.HemisphereLight(0xdff5ee,0x10201f,.9));
 const sun=new THREE.DirectionalLight(0xffffff,.9);sun.position.set(120,220,160);scene.add(sun);
 const mat=new THREE.MeshStandardMaterial({color:0x8fd0bd,roughness:.35,metalness:.05,side:THREE.DoubleSide});
 const mesh=new THREE.Mesh(new THREE.BufferGeometry(),mat);scene.add(mesh);
-const grid=new THREE.GridHelper(400,20,0x2c474c,0x1a2c30);scene.add(grid);
+const grid=new THREE.Mesh(new THREE.CylinderGeometry(120,126,6,96).translate(0,-3,0),new THREE.MeshStandardMaterial({color:0x2a6f63,roughness:.5}));scene.add(grid);
 let th=.7,ph=1.2,dist=420;
 function placeCam(){cam.position.set(dist*Math.sin(ph)*Math.sin(th),dist*Math.cos(ph)+P.h/2*0,dist*Math.sin(ph)*Math.cos(th));cam.position.y+=0;cam.lookAt(0,0,0)}
 function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
@@ -119,23 +154,31 @@ document.getElementById("wire").onchange=e=>mat.wireframe=e.target.checked;
 function refresh(){
   mesh.geometry.dispose();mesh.geometry=buildMesh();
   mesh.position.y=-P.h/2;grid.position.y=-P.h/2;
-  const tris=mesh.geometry.index.count/3;
-  document.getElementById("stats").textContent=`${tris.toLocaleString()} triangles · ${P.h} mm tall`;
+  ovf=paint();eh.value=P.h;showInfo();
+  try{history.replaceState(null,"","#"+new URLSearchParams(P))}catch(e){}
 }
 
 /* ---------- UI ---------- */
+const GRP={h:"sShape",ribs:"sSurf",wall:"sWalls"};
 const sl=document.getElementById("sliders");
 DEF.forEach(([k,label,min,max,step,unit])=>{
-  const d=document.createElement("div");d.className="row";
-  d.innerHTML=`<label for="s_${k}">${label}</label><output id="o_${k}"></output><input type="range" id="s_${k}" min="${min}" max="${max}" step="${step}">`;
+  if(GRP[k])sl.insertAdjacentHTML("beforeend",`<h2 data-i="${GRP[k]}"></h2>`);const d=document.createElement("div");d.className="row";
+  d.innerHTML=`<label for="s_${k}" data-i="${k}"></label><span class="val"><input type="number" id="n_${k}" min="${min}" max="${max}" step="${step}" aria-label="${label}"><em>${unit}</em></span><input type="range" id="s_${k}" min="${min}" max="${max}" step="${step}">`;
   sl.appendChild(d);
-  const i=d.querySelector("input");
+  const i=d.querySelector("input[type=range]"),nb=d.querySelector("input[type=number]");
+  nb.oninput=()=>{const v=parseFloat(nb.value);if(isFinite(v)&&v>=min&&v<=max){P[k]=v;i.value=v;refresh()}};
+  nb.onchange=()=>{let v=parseFloat(nb.value);if(!isFinite(v))v=P[k];v=Math.min(max,Math.max(min,v));P[k]=v;nb.value=v;syncAll();refresh()};
   i.oninput=()=>{P[k]=+i.value;sync(k);refresh()};
 });
-function sync(k){const u=DEF.find(d=>d[0]===k)[5];document.getElementById("o_"+k).textContent=P[k]+(u?" "+u:"")}
+function sync(k){const n=document.getElementById("n_"+k);if(document.activeElement!==n)n.value=P[k]}
 function syncAll(){DEF.forEach(([k])=>{document.getElementById("s_"+k).value=P[k];sync(k)})}
-Object.keys(PRESETS).forEach(n=>{const b=document.createElement("button");b.textContent=n;
+Object.keys(PRESETS).forEach(n=>{const b=document.createElement("button");b.innerHTML=sil(PRESETS[n])+`<span data-i="${n}"></span>`;
   b.onclick=()=>{Object.assign(P,PRESETS[n]);syncAll();refresh()};document.getElementById("presets").appendChild(b)});
+function sil(p){const pts=[[0,p.rb],[p.tm,p.rm],[.82,p.rn],[1,p.rl]];
+  const R=t=>{let k=0;while(k<2&&t>pts[k+1][0])k++;const a=pts[k],b=pts[k+1],u=(t-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*(1-Math.cos(Math.PI*u))/2};
+  const sc=44/p.h;let l="",r="";
+  for(let i=0;i<=20;i++){const t=i/20,y=(1-t)*44,w=R(t)*sc;l+=`${i?"L":"M"}${30-w},${y} `;r=`L${30+w},${y} `+r}
+  return `<svg viewBox="0 0 60 46" width="30" height="23" aria-hidden="true"><path d="${l}${r}Z"/></svg>`}
 
 /* ---------- export ---------- */
 function save(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
@@ -144,7 +187,7 @@ function exportSTL(){
   const g=mesh.geometry,p=g.attributes.position.array,ix=g.index.array,n=ix.length/3;
   const buf=new ArrayBuffer(84+n*50),dv=new DataView(buf);
   new TextEncoder().encodeInto("Vase Forge",new Uint8Array(buf,0,80));dv.setUint32(80,n,true);
-  const T=i=>[p[i*3],-p[i*3+2],p[i*3+1]]; // Y-up to Z-up, proper rotation
+  const s=S(),T=i=>[p[i*3]*s,-p[i*3+2]*s,p[i*3+1]*s]; // Y-up to Z-up, proper rotation
   for(let f=0,o=84;f<n;f++,o+=50){
     const a=T(ix[f*3]),b=T(ix[f*3+1]),c=T(ix[f*3+2]);
     const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
@@ -159,9 +202,9 @@ function exportGLB(){
   const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
   for(let i=0;i<pos.length;i++){mn[i%3]=Math.min(mn[i%3],pos[i]);mx[i%3]=Math.max(mx[i%3],pos[i])}
   const pl=pos.byteLength,nl=nor.byteLength,il=ix.byteLength,bin=pl+nl+il;
-  const json={asset:{version:"2.0",generator:"Vase Forge"},scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0}],
+  const json={asset:{version:"2.0",generator:"Vase Forge"},scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0,scale:[S(),S(),S()]}],
     meshes:[{primitives:[{attributes:{POSITION:0,NORMAL:1},indices:2,material:0}]}],
-    materials:[{pbrMetallicRoughness:{baseColorFactor:[.56,.82,.74,1],metallicFactor:.05,roughnessFactor:.35},doubleSided:true}],
+    materials:[{pbrMetallicRoughness:{baseColorFactor:[...new THREE.Color(glz.value).toArray(),1],metallicFactor:.05,roughnessFactor:.35},doubleSided:true}],
     buffers:[{byteLength:bin}],
     bufferViews:[{buffer:0,byteOffset:0,byteLength:pl,target:34962},{buffer:0,byteOffset:pl,byteLength:nl,target:34962},{buffer:0,byteOffset:pl+nl,byteLength:il,target:34963}],
     accessors:[{bufferView:0,componentType:5126,count:pos.length/3,type:"VEC3",min:mn,max:mx},
@@ -178,7 +221,62 @@ function exportGLB(){
 }
 document.getElementById("stl").onclick=exportSTL;
 document.getElementById("glb").onclick=exportGLB;
-syncAll();refresh();resize();
+/* ---------- extras ---------- */
+const $=id=>document.getElementById(id),glz=$("glz"),over=$("over"),eh=$("eh"),st=$("stats"),inf=$("inf");
+let ovf=0,lang,theme,H=[],hi=-1;
+const L={en:{h:"Height",rb:"Base radius",rm:"Belly radius",tm:"Belly height",rn:"Neck radius",rl:"Lip radius",ribs:"Ribs",rd:"Rib depth",tw:"Twist",wall:"Wall thickness",floor:"Floor thickness",res:"Sides",Amphora:"Amphora",Cylinder:"Cylinder",Bulb:"Bulb",Twisted:"Twisted",Fluted:"Fluted",wire:"Wireframe",spin:"Auto-rotate",cut:"Cross-section",over:"Show overhangs",glaze:"Glaze",copy:"Copy link",save:"Save design",load:"Load design",png:"Save PNG",eh:"Export height (mm)",stl:"Download STL",glb:"GLB",obj:"OBJ",undo:"Undo",redo:"Redo",rnd:"Randomize",tri:"triangles",w:"width",vol:"Volume",mass:"Solid PLA",ovl:"Overhang",light:"Light mode",dark:"Dark mode",copied:"Copied!",sShape:"Shape",sSurf:"Surface",sWalls:"Walls",sLook:"Look",sOut:"Export"},
+cs:{h:"Výška",rb:"Poloměr podstavy",rm:"Poloměr bříška",tm:"Výška bříška",rn:"Poloměr krku",rl:"Poloměr okraje",ribs:"Žebra",rd:"Hloubka žeber",tw:"Zkroucení",wall:"Tloušťka stěny",floor:"Tloušťka dna",res:"Počet stran",Amphora:"Amfora",Cylinder:"Válec",Bulb:"Baňka",Twisted:"Zkroucená",Fluted:"Žlábkovaná",wire:"Drátový model",spin:"Automatické otáčení",cut:"Řez",over:"Zobrazit převisy",glaze:"Glazura",copy:"Kopírovat odkaz",save:"Uložit návrh",load:"Načíst návrh",png:"Uložit PNG",eh:"Výška při exportu (mm)",stl:"Stáhnout STL",glb:"GLB",obj:"OBJ",undo:"Zpět",redo:"Znovu",rnd:"Náhodně",tri:"trojúhelníků",w:"šířka",vol:"Objem",mass:"Plné PLA",ovl:"Převisy",light:"Světlý režim",dark:"Tmavý režim",copied:"Zkopírováno!",sShape:"Tvar",sSurf:"Povrch",sWalls:"Stěny",sLook:"Vzhled",sOut:"Export"}};
+try{lang=localStorage.lang;theme=localStorage.theme}catch(e){}
+lang=lang||((navigator.language||"").startsWith("cs")?"cs":"en");
+if(!L[lang])lang="en";
+theme=theme||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");
+const t=k=>L[lang][k]||k,S=()=>(+eh.value||P.h)/P.h;
+function tr(){document.documentElement.lang=lang;
+  document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
+  $("lang").textContent=lang==="en"?"Čeština":"English";
+  $("theme").textContent=t(theme==="dark"?"light":"dark");showInfo()}
+function applyTheme(){document.documentElement.dataset.theme=theme;
+  scene.background=new THREE.Color(theme==="light"?0xdfe9e6:0x0e1618);grid.material.color.set(theme==="light"?0x2a6f63:0x2c474c);
+  try{localStorage.theme=theme}catch(e){}}
+const WARN=new THREE.Color(0xe0533d);
+mat.vertexColors=true;mat.color.set(0xffffff);
+function paint(){
+  const g=mesh.geometry,p=g.attributes.position.array,n=g.attributes.normal.array,c=new THREE.Color(glz.value),col=new Float32Array(p.length),N=p.length/3;let bad=0;
+  for(let i=0;i<N;i++){const f=n[i*3+1]<-.707&&p[i*3+1]>.5;if(f)bad++;(f&&over.checked?WARN:c).toArray(col,i*3)}
+  g.setAttribute("color",new THREE.BufferAttribute(col,3));return bad/N}
+function showInfo(){
+  const g=mesh.geometry,p=g.attributes.position.array,ix=g.index.array;let v=0,mx=0;
+  for(let f=0;f<ix.length;f+=3){const a=ix[f]*3,b=ix[f+1]*3,c=ix[f+2]*3;
+    v+=(p[a]*(p[b+1]*p[c+2]-p[b+2]*p[c+1])+p[a+1]*(p[b+2]*p[c]-p[b]*p[c+2])+p[a+2]*(p[b]*p[c+1]-p[b+1]*p[c]))/6}
+  for(let i=0;i<p.length;i+=3)mx=Math.max(mx,Math.hypot(p[i],p[i+2]));
+  const s=S(),cm=Math.abs(v)*s**3/1000;
+  st.textContent=`${(ix.length/3).toLocaleString()} ${t("tri")} · ${t("w")} ${(2*mx*s).toFixed(0)} mm`;
+  inf.textContent=`${t("vol")}: ${cm.toFixed(1)} cm³ · ${t("mass")}: ${(cm*1.24).toFixed(0)} g · ${t("ovl")}: ${(ovf*100).toFixed(0)} %`}
+function snap(){const s=JSON.stringify(P);if(H[hi]===s)return;H=H.slice(0,hi+1);H.push(s);hi=H.length-1}
+function go(d){const n=hi+d;if(n<0||n>=H.length)return;hi=n;Object.assign(P,JSON.parse(H[hi]));syncAll();refresh()}
+const plane=new THREE.Plane(new THREE.Vector3(0,0,-1),0);renderer.localClippingEnabled=true;
+$("cut").onchange=e=>{mat.clippingPlanes=e.target.checked?[plane]:[];mat.needsUpdate=true};
+over.onchange=()=>{ovf=paint();showInfo()};
+glz.oninput=paint;eh.oninput=showInfo;
+sl.addEventListener("change",snap);$("presets").addEventListener("click",snap);
+$("undo").onclick=()=>go(-1);$("redo").onclick=()=>go(1);
+$("lang").onclick=()=>{lang=lang==="en"?"cs":"en";try{localStorage.lang=lang}catch(e){}tr()};
+$("theme").onclick=()=>{theme=theme==="dark"?"light":"dark";applyTheme();tr()};
+$("rnd").onclick=()=>{const r=(a,b)=>Math.round(a+Math.random()*(b-a));
+  Object.assign(P,{h:r(100,220),rb:r(22,50),rm:r(30,70),tm:+(.25+Math.random()*.35).toFixed(2),rn:r(16,45),rl:r(20,50),ribs:r(0,3)?r(3,24):0,rd:+(Math.random()*.15).toFixed(2),tw:r(-3,3)*60,wall:2.4,floor:3,res:Math.max(P.res,96)});
+  syncAll();refresh();snap()};
+$("copy").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(location.href).then(()=>{$("copy").lastElementChild.textContent=t("copied");setTimeout(tr,1200)}).catch(()=>{})};
+$("save").onclick=()=>save(new Blob([JSON.stringify({...P,glaze:glz.value})],{type:"application/json"}),"vase-design.json");
+$("load").onclick=()=>$("file").click();
+$("file").onchange=e=>{const f=e.target.files[0];if(!f)return;
+  f.text().then(x=>{try{const d=JSON.parse(x);DEF.forEach(([k])=>{if(isFinite(+d[k]))P[k]=+d[k]});if(d.glaze)glz.value=d.glaze;syncAll();refresh();snap()}catch(err){}});e.target.value=""};
+$("png").onclick=()=>{renderer.render(scene,cam);cv.toBlob(b=>save(b,"vase.png"))};
+$("obj").onclick=()=>{const p=mesh.geometry.attributes.position.array,ix=mesh.geometry.index.array,s=S(),o=["# Vase Forge"];
+  for(let i=0;i<p.length;i+=3)o.push(`v ${(p[i]*s).toFixed(4)} ${(-p[i+2]*s).toFixed(4)} ${(p[i+1]*s).toFixed(4)}`);
+  for(let f=0;f<ix.length;f+=3)o.push(`f ${ix[f]+1} ${ix[f+1]+1} ${ix[f+2]+1}`);
+  save(new Blob([o.join("\n")],{type:"text/plain"}),"vase.obj")};
+try{new URLSearchParams(location.hash.slice(1)).forEach((v,k)=>{if(k in P&&isFinite(+v))P[k]=+v})}catch(e){}
+syncAll();applyTheme();refresh();snap();tr();resize();
 </script>
 </body>
 </html>
