@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e1618">
+<title>Vase Forge</title>
+<style>
+:root{--bg:#0e1618;--panel:#142024;--line:#24383d;--ink:#e6efec;--mute:#8fa7a3;--glaze:#8fd0bd}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+#view{position:relative;flex:0 0 48vh;min-height:260px}
+#c{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#stats{position:absolute;left:12px;bottom:10px;color:var(--mute);font-size:12px;pointer-events:none}
+h1{position:absolute;left:14px;top:10px;margin:0;font:600 22px Georgia,"Times New Roman",serif;letter-spacing:.01em;pointer-events:none}
+#panel{flex:1;overflow:auto;background:var(--panel);border-top:1px solid var(--line);padding:14px 16px 28px}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:0 0 12px}
+.row label{color:var(--mute)}
+.row output{font-variant-numeric:tabular-nums}
+.row input{grid-column:1/3;width:100%;accent-color:var(--glaze)}
+.group{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+button{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--glaze)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--glaze);outline-offset:2px}
+button.main{background:var(--glaze);color:#0b1a17;border-color:var(--glaze);font-weight:600}
+.sep{height:1px;background:var(--line);margin:6px 0 14px}
+.opt{display:flex;gap:14px;margin:0 0 16px;color:var(--mute)}
+.opt label{display:flex;gap:6px;align-items:center}
+@media(min-width:820px){body{flex-direction:row}#view{flex:1;min-height:0}#panel{flex:0 0 340px;border-top:0;border-left:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div id="view"><canvas id="c"></canvas><h1>Vase Forge</h1><div id="stats"></div></div>
+<aside id="panel">
+  <div class="group" id="presets"></div>
+  <div id="sliders"></div>
+  <div class="opt">
+    <label><input type="checkbox" id="wire"> Wireframe</label>
+    <label><input type="checkbox" id="spin" checked> Auto-rotate</label>
+  </div>
+  <div class="sep"></div>
+  <div class="group">
+    <button class="main" id="stl">Download STL</button>
+    <button id="glb">Download GLB</button>
+  </div>
+  <div style="color:var(--mute);font-size:12px">STL is exported in millimetres with the vase standing on Z, ready for slicing. Wall and base are solid, so no supports are needed.</div>
+</aside>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const P={h:160,rb:36,rm:56,tm:.4,rn:28,rl:34,ribs:12,rd:.07,tw:90,wall:2.4,floor:3,res:96};
+const DEF=[
+ ["h","Height",60,300,1,"mm"],["rb","Base radius",15,80,1,"mm"],["rm","Belly radius",15,100,1,"mm"],
+ ["tm","Belly height",.1,.7,.01,""],["rn","Neck radius",10,70,1,"mm"],["rl","Lip radius",10,80,1,"mm"],
+ ["ribs","Ribs",0,40,1,""],["rd","Rib depth",0,.25,.01,""],["tw","Twist",-360,360,5,"°"],
+ ["wall","Wall thickness",1,8,.2,"mm"],["floor","Floor thickness",1,10,.5,"mm"],["res","Sides",12,200,2,""]];
+const PRESETS={
+ Amphora:{h:190,rb:30,rm:58,tm:.45,rn:24,rl:38,ribs:0,rd:0,tw:0,wall:2.6,floor:3,res:96},
+ Cylinder:{h:140,rb:36,rm:38,tm:.4,rn:37,rl:38,ribs:0,rd:0,tw:0,wall:2.4,floor:3,res:96},
+ Bulb:{h:120,rb:26,rm:62,tm:.3,rn:16,rl:22,ribs:0,rd:0,tw:0,wall:2.4,floor:3,res:96},
+ Twisted:{h:180,rb:34,rm:50,tm:.42,rn:30,rl:36,ribs:7,rd:.14,tw:180,wall:2.4,floor:3,res:160},
+ Fluted:{h:150,rb:38,rm:48,tm:.35,rn:36,rl:44,ribs:24,rd:.05,tw:0,wall:2.2,floor:3,res:192}};
+
+/* ---------- geometry ---------- */
+function buildMesh(){
+  const M=P.res,N=120,pos=[],idx=[],H=P.h,TW=P.tw*Math.PI/180;
+  const pts=[[0,P.rb],[P.tm,P.rm],[.82,P.rn],[1,P.rl]];
+  const R=t=>{let k=0;while(k<2&&t>pts[k+1][0])k++;const[a,b]=[pts[k],pts[k+1]];
+    const u=Math.min(1,Math.max(0,(t-a[0])/(b[0]-a[0]))),s=(1-Math.cos(Math.PI*u))/2;return a[1]+(b[1]-a[1])*s};
+  const rad=(t,j)=>{let r=R(t);if(P.ribs>0)r*=1+P.rd*Math.cos(P.ribs*(j/M*Math.PI*2-TW*t));return r};
+  const inn=(t,j)=>Math.max(rad(t,j)-P.wall,1);
+  const ring=(y,t,fn)=>{const s=pos.length/3;for(let j=0;j<M;j++){const a=j/M*Math.PI*2,r=fn(t,j);pos.push(r*Math.cos(a),y,r*Math.sin(a))}return s};
+  const strip=(rows,flip)=>{for(let i=0;i<rows.length-1;i++)for(let j=0;j<M;j++){
+    const A=rows[i]+j,B=rows[i]+(j+1)%M,C=rows[i+1]+j,D=rows[i+1]+(j+1)%M;
+    flip?idx.push(A,B,C,B,D,C):idx.push(A,C,B,B,C,D)}};
+  const fan=(c,r,up)=>{for(let j=0;j<M;j++){const a=r+j,b=r+(j+1)%M;up?idx.push(c,b,a):idx.push(c,a,b)}};
+  const fl=Math.min(P.floor,H*.5),tf=fl/H;
+  const outer=[],inner=[];
+  for(let i=0;i<=N;i++){const t=i/N;outer.push(ring(t*H,t,rad))}
+  for(let i=0;i<=N;i++){const t=tf+(1-tf)*i/N;inner.push(ring(t*H,t,inn))}
+  strip(outer,false);strip(inner,true);
+  const rimO=ring(H,1,rad),rimI=ring(H,1,inn);strip([rimO,rimI],false);
+  const bR=ring(0,0,rad);pos.push(0,0,0);fan(pos.length/3-1,bR,false);
+  const fR=ring(fl,tf,inn);pos.push(0,fl,0);fan(pos.length/3-1,fR,true);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(pos),3));
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx),1));
+  g.computeVertexNormals();return g;
+}
+
+/* ---------- viewer ---------- */
+const cv=document.getElementById("c"),view=document.getElementById("view");
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,1,2000);
+scene.add(new THREE.HemisphereLight(0xdff5ee,0x10201f,.9));
+const sun=new THREE.DirectionalLight(0xffffff,.9);sun.position.set(120,220,160);scene.add(sun);
+const mat=new THREE.MeshStandardMaterial({color:0x8fd0bd,roughness:.35,metalness:.05,side:THREE.DoubleSide});
+const mesh=new THREE.Mesh(new THREE.BufferGeometry(),mat);scene.add(mesh);
+const grid=new THREE.GridHelper(400,20,0x2c474c,0x1a2c30);scene.add(grid);
+let th=.7,ph=1.2,dist=420;
+function placeCam(){cam.position.set(dist*Math.sin(ph)*Math.sin(th),dist*Math.cos(ph)+P.h/2*0,dist*Math.sin(ph)*Math.cos(th));cam.position.y+=0;cam.lookAt(0,0,0)}
+function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(view);
+const ptrs=new Map();let pinch=0;
+cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.clientX,e.clientY]);cv.style.cursor="grabbing"});
+cv.addEventListener("pointerup",e=>{ptrs.delete(e.pointerId);pinch=0;cv.style.cursor="grab"});
+cv.addEventListener("pointermove",e=>{
+  if(!ptrs.has(e.pointerId))return;const p=ptrs.get(e.pointerId);
+  if(ptrs.size===1){th-=(e.clientX-p[0])*.008;ph=Math.min(3,Math.max(.15,ph-(e.clientY-p[1])*.008))}
+  ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size===2){const[a,b]=[...ptrs.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinch)dist=Math.min(900,Math.max(120,dist*pinch/d));pinch=d}
+});
+cv.addEventListener("wheel",e=>{e.preventDefault();dist=Math.min(900,Math.max(120,dist*(1+e.deltaY*.001)))},{passive:false});
+const spin=document.getElementById("spin");
+(function loop(){requestAnimationFrame(loop);if(spin.checked&&!ptrs.size)th+=.004;placeCam();renderer.render(scene,cam)})();
+document.getElementById("wire").onchange=e=>mat.wireframe=e.target.checked;
+
+function refresh(){
+  mesh.geometry.dispose();mesh.geometry=buildMesh();
+  mesh.position.y=-P.h/2;grid.position.y=-P.h/2;
+  const tris=mesh.geometry.index.count/3;
+  document.getElementById("stats").textContent=`${tris.toLocaleString()} triangles · ${P.h} mm tall`;
+}
+
+/* ---------- UI ---------- */
+const sl=document.getElementById("sliders");
+DEF.forEach(([k,label,min,max,step,unit])=>{
+  const d=document.createElement("div");d.className="row";
+  d.innerHTML=`<label for="s_${k}">${label}</label><output id="o_${k}"></output><input type="range" id="s_${k}" min="${min}" max="${max}" step="${step}">`;
+  sl.appendChild(d);
+  const i=d.querySelector("input");
+  i.oninput=()=>{P[k]=+i.value;sync(k);refresh()};
+});
+function sync(k){const u=DEF.find(d=>d[0]===k)[5];document.getElementById("o_"+k).textContent=P[k]+(u?" "+u:"")}
+function syncAll(){DEF.forEach(([k])=>{document.getElementById("s_"+k).value=P[k];sync(k)})}
+Object.keys(PRESETS).forEach(n=>{const b=document.createElement("button");b.textContent=n;
+  b.onclick=()=>{Object.assign(P,PRESETS[n]);syncAll();refresh()};document.getElementById("presets").appendChild(b)});
+
+/* ---------- export ---------- */
+function save(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function exportSTL(){
+  const g=mesh.geometry,p=g.attributes.position.array,ix=g.index.array,n=ix.length/3;
+  const buf=new ArrayBuffer(84+n*50),dv=new DataView(buf);
+  new TextEncoder().encodeInto("Vase Forge",new Uint8Array(buf,0,80));dv.setUint32(80,n,true);
+  const T=i=>[p[i*3],-p[i*3+2],p[i*3+1]]; // Y-up to Z-up, proper rotation
+  for(let f=0,o=84;f<n;f++,o+=50){
+    const a=T(ix[f*3]),b=T(ix[f*3+1]),c=T(ix[f*3+2]);
+    const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+    let nx=u[1]*v[2]-u[2]*v[1],ny=u[2]*v[0]-u[0]*v[2],nz=u[0]*v[1]-u[1]*v[0];
+    const l=Math.hypot(nx,ny,nz)||1;[nx,ny,nz].forEach((q,i)=>dv.setFloat32(o+i*4,q/l,true));
+    [a,b,c].forEach((q,k)=>q.forEach((x,i)=>dv.setFloat32(o+12+k*12+i*4,x,true)));
+  }
+  save(new Blob([buf],{type:"model/stl"}),"vase.stl");
+}
+function exportGLB(){
+  const g=mesh.geometry,pos=g.attributes.position.array,nor=g.attributes.normal.array,ix=g.index.array;
+  const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+  for(let i=0;i<pos.length;i++){mn[i%3]=Math.min(mn[i%3],pos[i]);mx[i%3]=Math.max(mx[i%3],pos[i])}
+  const pl=pos.byteLength,nl=nor.byteLength,il=ix.byteLength,bin=pl+nl+il;
+  const json={asset:{version:"2.0",generator:"Vase Forge"},scene:0,scenes:[{nodes:[0]}],nodes:[{mesh:0}],
+    meshes:[{primitives:[{attributes:{POSITION:0,NORMAL:1},indices:2,material:0}]}],
+    materials:[{pbrMetallicRoughness:{baseColorFactor:[.56,.82,.74,1],metallicFactor:.05,roughnessFactor:.35},doubleSided:true}],
+    buffers:[{byteLength:bin}],
+    bufferViews:[{buffer:0,byteOffset:0,byteLength:pl,target:34962},{buffer:0,byteOffset:pl,byteLength:nl,target:34962},{buffer:0,byteOffset:pl+nl,byteLength:il,target:34963}],
+    accessors:[{bufferView:0,componentType:5126,count:pos.length/3,type:"VEC3",min:mn,max:mx},
+      {bufferView:1,componentType:5126,count:nor.length/3,type:"VEC3"},{bufferView:2,componentType:5125,count:ix.length,type:"SCALAR"}]};
+  let js=new TextEncoder().encode(JSON.stringify(json));const jl=Math.ceil(js.length/4)*4;
+  const jb=new Uint8Array(jl).fill(32);jb.set(js);
+  const total=12+8+jl+8+bin,out=new ArrayBuffer(total),dv=new DataView(out),u8=new Uint8Array(out);
+  dv.setUint32(0,0x46546C67,true);dv.setUint32(4,2,true);dv.setUint32(8,total,true);
+  dv.setUint32(12,jl,true);dv.setUint32(16,0x4E4F534A,true);u8.set(jb,20);
+  let o=20+jl;dv.setUint32(o,bin,true);dv.setUint32(o+4,0x004E4942,true);o+=8;
+  u8.set(new Uint8Array(pos.buffer,pos.byteOffset,pl),o);u8.set(new Uint8Array(nor.buffer,nor.byteOffset,nl),o+pl);
+  u8.set(new Uint8Array(ix.buffer,ix.byteOffset,il),o+pl+nl);
+  save(new Blob([out],{type:"model/gltf-binary"}),"vase.glb");
+}
+document.getElementById("stl").onclick=exportSTL;
+document.getElementById("glb").onclick=exportGLB;
+syncAll();refresh();resize();
+</script>
+</body>
+</html>
