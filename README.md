@@ -1,10 +1,48 @@
 # Vase-Forge
-Design a vase in your browser and export it for 3D printing or use in other 3D tools. Adjust the shape with sliders and watch the model update in real time.
+A browser-based vase designer. Shape a vase with sliders, watch it update in 3D, and export it for printing or use in other 3D tools. It is a single HTML file with no build step.
 
-Features
+## Features
 
-• Profile controls for height, base, belly, neck and lip radius, and belly position • Surface controls for ribs, rib depth and twist • Hollow walls with adjustable wall and floor thickness • Five presets: Amphora, Cylinder, Bulb, Twisted, Fluted • Orbit, zoom and pinch controls, with wireframe and auto-rotate • Export to binary STL (millimetres, Z-up, ready for slicing) or GLB Usage Open index.html in a browser. No install or build step is needed, but an internet connection is required to load three.js from a CDN.
+**Design**
+- Control height, base, belly, neck and lip radius, and belly position
+- Add ribs, rib depth and twist, and choose the number of sides
+- Set wall and floor thickness, so the vase is hollow and printable
+- Start from five presets: Amphora, Cylinder, Bulb, Twisted and Fluted
+- Drag a slider or type an exact value
+- Randomize the design, with undo and redo
 
-How it works The vase is a lathe surface. A smooth radius profile is swept around the vertical axis and modulated by a rib and twist function. An inner surface, rim and floor close the mesh into a solid, so it prints without supports. Geometry is built with three.js, and the STL and GLB writers are hand-rolled with no export libraries.
+**Preview**
+- Live 3D view: drag to orbit, scroll or pinch to zoom
+- Wireframe, auto-rotate and cross-section views
+- Overhang view that highlights faces needing support
+- Glaze colour picker
+- Estimates for volume, solid-PLA weight and overhang share
 
-Tech: HTML, JavaScript, three.js r128
+**Save and share**
+- Copy a link that recreates the exact design
+- Save and load designs as JSON
+- Save a PNG snapshot
+
+**Export**
+- STL (binary, millimetres, Z-up, ready for slicing)
+- GLB and OBJ
+- Set the export height to scale the model
+
+**Interface**
+- English and Czech
+- Light and dark mode
+- Your language and theme choices are remembered
+
+## Usage
+
+Open `index.html` in a browser. No install is needed, but you need an internet connection, because three.js is loaded from a CDN.
+
+To host it on GitHub Pages, name the file `index.html` in the repository root, then choose your branch under **Settings → Pages**.
+
+## How it works
+
+The vase is a lathe surface. A smooth radius profile is swept around the vertical axis and modulated by a rib and twist function. An inner surface, a rim and a floor close the mesh into a solid. The STL, GLB and OBJ writers are written by hand, without export libraries.
+
+## Tech
+
+HTML, CSS, JavaScript and [three.js](https://threejs.org/) r128.
