@@ -108,10 +108,6 @@ Contributions are welcome. To contribute:
 3. Make and test the update in a local browser.
 4. Open a pull request describing the improvement.
 
-## License
-
-No license is currently specified. If you plan to allow reuse or contributions, consider adding a license file and a corresponding `License` section.
-
 ## Author
 
 Created by [hofi0ne](https://github.com/hofi0ne).
