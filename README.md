@@ -1,10 +1,10 @@
-# Vase-Forge
+# Maker-Forge
 
-Vase-Forge is a browser-based 3D vase designer. Adjust the shape with sliders or exact values, preview the result in real time, and export it for 3D printing or use in another 3D application.
+Maker-Forge is a browser-based 3D vase designer. Adjust the shape with sliders or exact values, preview the result in real time, and export it for 3D printing or use in another 3D application.
 
 The project runs entirely in a single `index.html` file and has no build step. It is available online through GitHub Pages:
 
-**https://hofi0ne.github.io/Vase-Forge/**
+**https://hofi0ne.github.io/Maker-Forge/**
 
 ## Features
 
@@ -28,15 +28,15 @@ The project runs entirely in a single `index.html` file and has no build step. I
 
 ### Use the hosted version
 
-Open [Vase-Forge on GitHub Pages](https://hofi0ne.github.io/Vase-Forge/) in a modern browser.
+Open [Maker-Forge on GitHub Pages](https://hofi0ne.github.io/Maker-Forge/) in a modern browser.
 
 ### Run locally
 
 No installation or build process is required.
 
 ```bash
-git clone https://github.com/hofi0ne/Vase-Forge.git
-cd Vase-Forge
+git clone https://github.com/hofi0ne/Maker-Forge.git
+cd Maker-Forge
 ```
 
 Open `index.html` directly in a browser, or serve the directory locally:
@@ -69,7 +69,7 @@ Then visit `http://localhost:8000/`.
 
 ## How It Works
 
-Vase-Forge creates a hollow rotational mesh from a radius profile:
+Maker-Forge creates a hollow rotational mesh from a radius profile:
 
 1. The height profile combines the base, belly, neck, and lip radii.
 2. An optional rib pattern and twist modify the outer surface.
