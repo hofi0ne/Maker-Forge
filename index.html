@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0e1618">
-<title>Vase Forge</title>
+<title>Maker Forge</title>
 <style>
 :root{--bg:#dfe9e6;--panel:#fbfdfc;--ink:#13211f;--mute:#586e69;--line:#cfdcd8;--accent:#1f8a70;--on:#fff;--serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif}
 :root[data-theme=dark]{--bg:#0e1618;--panel:#142024;--ink:#e6efec;--mute:#8fa7a3;--line:#24383d;--accent:#8fd0bd;--on:#0b1a17}
@@ -62,16 +62,28 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .pill.main{background:var(--accent);color:var(--on)}
 .pill:hover{filter:brightness(1.12)}
 #inf{color:var(--mute);font-size:13px;margin-bottom:14px}
+:is(#gens){margin:14px 0 4px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+#gens summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;font:italic 400 21px/1.2 var(--serif)}
+#gens summary::-webkit-details-marker{display:none}
+#gens summary::after{content:"";width:8px;height:8px;margin-right:3px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);transition:transform .2s}
+#gens[open] summary::after{transform:rotate(-135deg)}
+#glist{border-top:1px solid var(--line)}
+#glist button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;padding:10px 14px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+#glist button:last-child{border-bottom:0}
+#glist button:hover{background:var(--panel)}
+#glist b{font-weight:600}
+#glist small{color:var(--mute);font-size:12px}
+@media(prefers-reduced-motion:reduce){#gens summary::after{transition:none}}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 @media(min-width:860px){body{flex-direction:row-reverse}#view{flex:1;min-height:0}#panel{flex:0 0 380px;border-right:1px solid var(--line)}#presets{bottom:38px}}
 </style>
 </head>
 <body>
 <div id="view"><canvas id="c"></canvas>
-  <header><h1>Vase Forge</h1>
+  <header><h1>Maker Forge</h1>
     <nav class="util"><button id="lang"></button><button id="theme"></button><button id="undo" data-i="undo"></button><button id="redo" data-i="redo"></button><button id="rnd" data-i="rnd"></button></nav></header>
   <div id="presets"></div><div id="stats"></div></div>
-<aside id="panel"><div id="sliders"></div>
+<aside id="panel"><details id="gens"><summary><span id="gname" data-i="g_vase"></span></summary><div id="glist"></div></details><div id="sliders"></div>
   <h2 data-i="sLook"></h2>
   <div class="opt"><label><input type="checkbox" id="wire"><span data-i="wire"></span></label><label><input type="checkbox" id="spin" checked><span data-i="spin"></span></label><label><input type="checkbox" id="cut"><span data-i="cut"></span></label><label><input type="checkbox" id="over"><span data-i="over"></span></label></div>
   <div class="row"><label for="glz" data-i="glaze"></label><input type="color" id="glz" value="#8fd0bd"></div>
@@ -83,13 +95,13 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 </aside>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const P={h:160,rb:36,rm:56,tm:.4,rn:28,rl:34,ribs:12,rd:.07,tw:90,wall:2.4,floor:3,res:96};
-const DEF=[
+let P={h:160,rb:36,rm:56,tm:.4,rn:28,rl:34,ribs:12,rd:.07,tw:90,wall:2.4,floor:3,res:96,er:2};
+let DEF=[
  ["h","Height",60,300,1,"mm"],["rb","Base radius",15,80,1,"mm"],["rm","Belly radius",15,100,1,"mm"],
  ["tm","Belly height",.1,.7,.01,""],["rn","Neck radius",10,70,1,"mm"],["rl","Lip radius",10,80,1,"mm"],
  ["ribs","Ribs",0,40,1,""],["rd","Rib depth",0,.25,.01,""],["tw","Twist",-360,360,5,"°"],
- ["wall","Wall thickness",1,8,.2,"mm"],["floor","Floor thickness",1,10,.5,"mm"],["res","Sides",12,200,2,""]];
-const PRESETS={
+ ["wall","Wall thickness",1,8,.2,"mm"],["floor","Floor thickness",1,10,.5,"mm"],["res","Sides",12,200,2,""],["er","Edge roundness",0,6,.5,"mm"]];
+let PRESETS={
  Amphora:{h:190,rb:30,rm:58,tm:.45,rn:24,rl:38,ribs:0,rd:0,tw:0,wall:2.6,floor:3,res:96},
  Cylinder:{h:140,rb:36,rm:38,tm:.4,rn:37,rl:38,ribs:0,rd:0,tw:0,wall:2.4,floor:3,res:96},
  Bulb:{h:120,rb:26,rm:62,tm:.3,rn:16,rl:22,ribs:0,rd:0,tw:0,wall:2.4,floor:3,res:96},
@@ -97,13 +109,14 @@ const PRESETS={
  Fluted:{h:150,rb:38,rm:48,tm:.35,rn:36,rl:44,ribs:24,rd:.05,tw:0,wall:2.2,floor:3,res:192}};
 
 /* ---------- geometry ---------- */
-function buildMesh(){
-  const M=P.res,N=120,pos=[],idx=[],H=P.h,TW=P.tw*Math.PI/180;
+let buildMesh;function buildVase(){
+  const M=LOW?Math.min(P.res,48):P.res,N=LOW?30:120,pos=[],idx=[],H=P.h,TW=P.tw*Math.PI/180;
   const pts=[[0,P.rb],[P.tm,P.rm],[.82,P.rn],[1,P.rl]];
   const R=t=>{let k=0;while(k<2&&t>pts[k+1][0])k++;const[a,b]=[pts[k],pts[k+1]];
     const u=Math.min(1,Math.max(0,(t-a[0])/(b[0]-a[0]))),s=(1-Math.cos(Math.PI*u))/2;return a[1]+(b[1]-a[1])*s};
-  const rad=(t,j)=>{let r=R(t);if(P.ribs>0)r*=1+P.rd*Math.cos(P.ribs*(j/M*Math.PI*2-TW*t));return r};
-  const inn=(t,j)=>Math.max(rad(t,j)-P.wall,1);
+  const base=(t,j)=>{let r=R(t);if(P.ribs>0)r*=1+P.rd*Math.cos(P.ribs*(j/M*Math.PI*2-TW*t));return r};
+  const ee=Math.min(P.er,P.wall*.8,H*.2),fil=t=>{const y=t*H,d=Math.min(y,H-y);return ee<.01||d>=ee?0:ee-Math.sqrt(ee*ee-(ee-d)*(ee-d))};
+  const rad=(t,j)=>base(t,j)-fil(t),inn=(t,j)=>Math.max(base(t,j)-P.wall,1);
   const ring=(y,t,fn)=>{const s=pos.length/3;for(let j=0;j<M;j++){const a=j/M*Math.PI*2,r=fn(t,j);pos.push(r*Math.cos(a),y,r*Math.sin(a))}return s};
   const strip=(rows,flip)=>{for(let i=0;i<rows.length-1;i++)for(let j=0;j<M;j++){
     const A=rows[i]+j,B=rows[i]+(j+1)%M,C=rows[i+1]+j,D=rows[i+1]+(j+1)%M;
@@ -123,6 +136,98 @@ function buildMesh(){
   g.computeVertexNormals();return g;
 }
 
+/* ---------- generators ---------- */
+let G,LOW=false;
+const fin=(pos,idx)=>{const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(pos),3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx),1));g.computeVertexNormals();return g};
+function rrOutline(hx,hz,r,K){const o=[];[[1,1],[-1,1],[-1,-1],[1,-1]].forEach(([sx,sz],c)=>{for(let k=0;k<=K;k++){const a=(c+k/K)*Math.PI/2;o.push([sx*(hx-r)+r*Math.cos(a),sz*(hz-r)+r*Math.sin(a)])}});return o}
+function mk(){const pos=[],idx=[];
+  const quad=(a,b,c,d)=>{const s=pos.length/3;[a,b,c,d].forEach(p=>pos.push(...p));idx.push(s,s+1,s+2,s,s+2,s+3)};
+  const hexa=(b,t)=>{quad(b[0],b[1],b[2],b[3]);quad(t[0],t[3],t[2],t[1]);for(let i=0;i<4;i++){const j=(i+1)%4;quad(b[i],t[i],t[j],b[j])}};
+  const box=(x0,y0,z0,x1,y1,z1)=>{if(x1-x0<.01||y1-y0<.01||z1-z0<.01)return;hexa([[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]],[[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]])};
+  const frus=(cx,cz,y0,y1,a0,b0,a1,b1)=>hexa([[cx-a0,y0,cz-b0],[cx+a0,y0,cz-b0],[cx+a0,y0,cz+b0],[cx-a0,y0,cz+b0]],[[cx-a1,y1,cz-b1],[cx+a1,y1,cz-b1],[cx+a1,y1,cz+b1],[cx-a1,y1,cz+b1]]);
+  const K=6,M=4*(K+1);
+  const ring=(y,hx,hz,r)=>{const s=pos.length/3;rrOutline(hx,hz,Math.max(Math.min(r,hx,hz),.05),K).forEach(p=>pos.push(p[0],y,p[1]));return s};
+  const strip=(rows,flip)=>{for(let i=0;i<rows.length-1;i++)for(let j=0;j<M;j++){const A=rows[i]+j,B=rows[i]+(j+1)%M,C=rows[i+1]+j,D=rows[i+1]+(j+1)%M;flip?idx.push(A,B,C,B,D,C):idx.push(A,C,B,B,C,D)}};
+  const cap=(r,y,up)=>{const c=pos.length/3;pos.push(0,y,0);for(let j=0;j<M;j++){const a=r+j,b=r+(j+1)%M;up?idx.push(c,b,a):idx.push(c,a,b)}};
+  const shell=(hx,hz,y0,y1,yf,w,rc,eb,et)=>{
+    et=Math.min(et,w*.8);rc=Math.max(rc,eb,et);
+    const nb=eb>.01?5:0,nt=et>.01?5:0,rw=[];
+    for(let k=0;k<=nb;k++){const f=nb?k/nb*Math.PI/2:0;rw.push([y0+eb*(1-Math.cos(f)),eb*(1-Math.sin(f))])}
+    for(let k=nt;k>=0;k--){const f=nt?k/nt*Math.PI/2:0;rw.push([y1-et*(1-Math.cos(f)),et*(1-Math.sin(f))])}
+    const O=([y,d])=>ring(y,hx-d,hz-d,rc-d),IN=y=>ring(y,hx-w,hz-w,rc-w);
+    strip(rw.map(O),false);strip([IN(yf),IN(y1)],true);strip([O(rw[rw.length-1]),IN(y1)],false);
+    cap(O(rw[0]),y0,false);cap(IN(yf),yf,true)};
+  return{pos,idx,hexa,box,frus,shell}}
+function buildBin(){
+  const m=mk(),W=P.wc,D=P.dc,Ht=P.hu*7,p=42,Wo=W*p-.5,Do=D*p-.5,w=P.wall,fl=P.floor,by=4.75,xi0=-Wo/2+w,xi1=Wo/2-w;
+  for(let i=0;i<W;i++)for(let j=0;j<D;j++){const cx=(i-(W-1)/2)*p,cz=(j-(D-1)/2)*p;
+    m.frus(cx,cz,0,.8,17.8,17.8,18.6,18.6);m.frus(cx,cz,.8,2.6,18.6,18.6,18.6,18.6);m.frus(cx,cz,2.6,by,18.6,18.6,20.75,20.75)}
+  m.shell(Wo/2,Do/2,by,Ht,by+fl,w,P.cr,P.er,P.er);
+  for(let k=1;k<=P.dx;k++){const x=xi0+(xi1-xi0)*k/(P.dx+1);m.box(x-w/2,by+fl,-Do/2+w,x+w/2,Ht-1,Do/2-w)}
+  for(let k=1;k<=P.dz;k++){const z=(-Do/2+w)+(Do-2*w)*k/(P.dz+1);m.box(xi0,by+fl,z-w/2,xi1,Ht-1,z+w/2)}
+  if(P.lip>0){const y0=Ht-P.lip,li=1.4;
+    m.box(xi0,y0,-Do/2+w,xi1,Ht,-Do/2+w+li);m.box(xi0,y0,Do/2-w-li,xi1,Ht,Do/2-w);
+    m.box(xi0,y0,-Do/2+w+li,xi0+li,Ht,Do/2-w-li);m.box(xi1-li,y0,-Do/2+w+li,xi1,Ht,Do/2-w-li)}
+  return fin(m.pos,m.idx)}
+function buildPlanter(){
+  const M=Math.max(3,Math.round(P.res)),H=P.h,TW=P.tw*Math.PI/180,pos=[],idx=[],K=(M>=24||P.cr<=0)?0:4,Mt=M*(K+1),cs=Math.cos(Math.PI/M);
+  const rad=t=>P.rb+(P.rt-P.rb)*t,ri=t=>Math.max(rad(t)-P.wall/cs,1);
+  const ring=(y,t,r)=>{const s=pos.length/3,apo=r*cs,rr=P.cr/100*apo,Rin=(apo-rr)/cs;
+    for(let j=0;j<M;j++){const al=(j+.5)/M*Math.PI*2+TW*t;for(let k=0;k<=K;k++){const f=K?al-Math.PI/M+2*Math.PI/M*k/K:al;pos.push(Rin*Math.cos(al)+rr*Math.cos(f),y,Rin*Math.sin(al)+rr*Math.sin(f))}}return s};
+  const strip=(rows,flip)=>{for(let i=0;i<rows.length-1;i++)for(let j=0;j<Mt;j++){
+    const A=rows[i]+j,B=rows[i]+(j+1)%Mt,C=rows[i+1]+j,D=rows[i+1]+(j+1)%Mt;
+    flip?idx.push(A,B,C,B,D,C):idx.push(A,C,B,B,C,D)}};
+  const fan=(c,r,up)=>{for(let j=0;j<Mt;j++){const a=r+j,b=r+(j+1)%Mt;up?idx.push(c,b,a):idx.push(c,a,b)}};
+  const e=Math.min(P.er,H*.3),et=Math.min(e,P.wall*.8),nb=e>.01?5:0,nt=et>.01?5:0,N=Math.max(1,Math.ceil(Math.abs(P.tw)/6)),rw=[];
+  for(let k=0;k<=nb;k++){const f=nb?k/nb*Math.PI/2:0;rw.push([e*(1-Math.cos(f))/H,e*(1-Math.sin(f))])}
+  for(let i=1;i<N;i++){const t=i/N;if(t*H>e&&t*H<H-et)rw.push([t,0])}
+  for(let k=nt;k>=0;k--){const f=nt?k/nt*Math.PI/2:0;rw.push([1-et*(1-Math.cos(f))/H,et*(1-Math.sin(f))])}
+  const fl=Math.min(P.floor,H*.5),tf=fl/H,hr=Math.min(P.hole,ri(tf)*.8),out=rw.map(([t,d])=>ring(t*H,t,rad(t)-d/cs)),inn=[];
+  for(let i=0;i<=N;i++){const t=tf+(1-tf)*i/N;inn.push(ring(t*H,t,ri(t)))}
+  strip(out,false);const br=ring(0,0,rad(0)-e/cs);
+  strip(inn,true);strip([ring(H,1,rad(1)-et/cs),ring(H,1,ri(1))],false);
+  const fr=ring(fl,tf,ri(tf));
+  if(hr>=1){strip([fr,ring(fl,tf,hr)],false);strip([ring(0,0,hr),ring(fl,tf,hr)],true);strip([br,ring(0,0,hr)],true)}
+  else{pos.push(0,fl,0);fan(pos.length/3-1,fr,true);pos.push(0,0,0);fan(pos.length/3-1,br,false)}
+  return fin(pos,idx)}
+function buildOrg(){
+  const m=mk(),C=P.cols,R=P.rows,cw=P.cw,cd=P.cd,w=P.wall,fl=P.floor,h=P.h,X=C*cw+(C+1)*w,Z=R*cd+(R+1)*w,g=Math.min(P.grip,cw/2-.5);
+  const B=(x0,y0,z0,x1,y1,z1)=>m.box(x0-X/2,y0,z0-Z/2,x1-X/2,y1,z1-Z/2);
+  m.shell(X/2,Z/2,0,h,fl,w,P.cr,P.er,P.er);
+  for(let j=1;j<R;j++){const z=j*(cd+w);B(w,fl,z,X-w,h,z+w)}
+  for(let i=0;i<=C;i++)for(let j=0;j<R;j++){const x=i*(cw+w),z0=j*(cd+w)+w;
+    if(i>0&&i<C)B(x,fl,z0,x+w,h,z0+cd);
+    if(g>0){if(i>0)B(x-g,h-2,z0,x,h,z0+cd);if(i<C)B(x+w,h-2,z0,x+w+g,h,z0+cd)}}
+  return fin(m.pos,m.idx)}
+function buildStand(){
+  const m=mk(),W=P.sw,pt=P.pt,bh=P.bh,dx=bh*Math.tan(P.tilt*Math.PI/180),bk=P.bkt,xb=P.lt+P.dt,L=xb+bk+dx,ox=-L/2,oz=-W/2;
+  const q=(x,y,z)=>[x+ox,y,z+oz];
+  m.box(ox,0,oz,ox+L,pt,oz+W);
+  m.box(ox,pt,oz,ox+P.lt,pt+P.lh,oz+W);
+  m.hexa([q(xb,pt,0),q(xb+bk,pt,0),q(xb+bk,pt,W),q(xb,pt,W)],[q(xb+dx,pt+bh,0),q(xb+dx+bk,pt+bh,0),q(xb+dx+bk,pt+bh,W),q(xb+dx,pt+bh,W)]);
+  return fin(m.pos,m.idx)}
+const BB={wc:2,dc:2,hu:4,dx:0,dz:0,wall:1.2,floor:1.2,lip:0,cr:3.75,er:.8},PB={h:110,rb:36,rt:50,res:64,tw:0,wall:3,floor:4,hole:8,cr:0,er:1.5},
+OB={cols:3,rows:2,cw:38,cd:38,h:60,grip:0,wall:2,floor:2,cr:3,er:1},SB={sw:80,dt:11,bh:70,tilt:20,lh:12,lt:5,pt:4,bkt:5};
+const GENS={
+ vase:{id:"vase",P:{...P},DEF,PRESETS,build:buildVase,height:p=>p.h,sil:1,GRP:{h:"sShape",ribs:"sSurf",wall:"sWalls",er:"sEdges"}},
+ bin:{id:"bin",P:{...BB,dx:1},build:buildBin,height:p=>p.hu*7,GRP:{wc:"sSize",dx:"sDiv",wall:"sWalls",cr:"sEdges"},
+  DEF:[["wc","Cells wide",1,6,1,""],["dc","Cells deep",1,6,1,""],["hu","Height units",2,12,1,""],["dx","Width dividers",0,5,1,""],["dz","Depth dividers",0,5,1,""],["wall","Wall thickness",.8,2.4,.1,"mm"],["floor","Floor thickness",.8,3,.1,"mm"],["lip","Stacking lip",0,4.4,.2,"mm"],["cr","Corner roundness",0,12,.25,"mm"],["er","Edge roundness",0,4,.2,"mm"]],
+  PRESETS:{Bin1:{...BB,wc:1,dc:1,hu:3},Bin2:{...BB,hu:6,lip:2.6},Bin3:{...BB,wc:3,dc:1,dx:2},Bin4:{...BB,wc:3,hu:3,dx:2,dz:1,wall:1.6,floor:1.6}}},
+ plt:{id:"plt",P:{...PB},build:buildPlanter,height:p=>p.h,GRP:{h:"sShape",res:"sSurf",wall:"sWalls",cr:"sEdges"},
+  DEF:[["h","Height",40,200,1,"mm"],["rb","Base radius",15,80,1,"mm"],["rt","Top radius",15,90,1,"mm"],["res","Sides",3,64,1,""],["tw","Twist",-90,90,5,"°"],["wall","Wall thickness",1.5,8,.5,"mm"],["floor","Floor thickness",2,10,.5,"mm"],["hole","Drain hole",0,20,1,"mm"],["cr","Corner roundness",0,100,5,"%"],["er","Edge roundness",0,10,.5,"mm"]],
+  PRESETS:{PlRound:{...PB},PlSquare:{...PB,h:100,rb:45,rt:52,res:4,cr:25},PlHex:{...PB,h:90,rb:42,rt:55,res:6,cr:20},PlTwist:{...PB,h:130,rb:40,rt:40,res:6,tw:60,hole:6,cr:15},PlTall:{...PB,h:180,rb:28,rt:30,wall:2.5,hole:5}}},
+ org:{id:"org",P:{...OB},build:buildOrg,height:p=>p.h,GRP:{cols:"sLayout",wall:"sWalls",cr:"sEdges"},
+  DEF:[["cols","Columns",1,8,1,""],["rows","Rows",1,4,1,""],["cw","Slot width",6,60,1,"mm"],["cd","Slot depth",10,80,1,"mm"],["h","Height",15,120,1,"mm"],["grip","Retaining lip",0,3,.2,"mm"],["wall","Wall thickness",1,4,.2,"mm"],["floor","Floor thickness",1,4,.2,"mm"],["cr","Corner roundness",0,15,.5,"mm"],["er","Edge roundness",0,4,.2,"mm"]],
+  PRESETS:{OrgCable:{...OB,cols:5,rows:1,cw:9,cd:20,h:24,grip:2},OrgPen:{...OB},OrgCaddy:{...OB,cols:4,cw:30,cd:45,h:40,cr:6},OrgDock:{...OB,rows:1,cw:24,cd:30,h:40,wall:2.4,floor:3,cr:8,er:2},OrgGrid:{...OB,cols:6,rows:4,cw:30,cd:30,h:30,wall:1.6,floor:1.6}}},
+ std:{id:"std",P:{...SB},build:buildStand,height:p=>p.pt+p.bh,GRP:{sw:"sSize",dt:"sHold"},
+  DEF:[["sw","Stand width",60,220,1,"mm"],["bh","Back height",40,150,1,"mm"],["tilt","Tilt",5,45,1,"°"],["pt","Plate thickness",3,10,.5,"mm"],["dt","Device thickness",5,30,1,"mm"],["lh","Lip height",6,30,1,"mm"],["lt","Lip thickness",3,10,.5,"mm"],["bkt","Back thickness",3,10,.5,"mm"]],
+  PRESETS:{StdPhone:{...SB},StdTab:{...SB,sw:200,dt:14,bh:120,tilt:25,lh:18,lt:6,pt:5,bkt:6},StdUp:{...SB,sw:70,dt:13,bh:90,tilt:10,lh:14},StdLow:{...SB,sw:100,bh:60,tilt:40,lh:10,lt:4}}}};
+const NT={en:{sSize:"Size",sDiv:"Dividers",sLayout:"Layout",sHold:"Holder",sEdges:"Edges",cr:"Corner roundness",er:"Edge roundness",g_vase:"Vase",gd_vase:"Lathe-turned vases",g_bin:"Gridfinity bin",gd_bin:"42 mm grid, dividers, stacking lip",g_plt:"Planter",gd_plt:"Round to hexagonal, with drainage",g_org:"Organizer",gd_org:"Cable clips, trays and drawer grids",g_std:"Phone & tablet stand",gd_std:"Adjustable tilt and device thickness",
+ wc:"Cells wide",dc:"Cells deep",hu:"Height units",dx:"Width dividers",dz:"Depth dividers",lip:"Stacking lip",rt:"Top radius",hole:"Drain hole",cols:"Columns",rows:"Rows",cw:"Slot width",cd:"Slot depth",front:"Front wall",grip:"Retaining lip",sw:"Stand width",dt:"Device thickness",bh:"Back height",tilt:"Tilt",lh:"Lip height",lt:"Lip thickness",pt:"Plate thickness",bkt:"Back thickness",
+ Bin1:"1×1 bin",Bin2:"2×2 deep",Bin3:"3×1 divided",Bin4:"Tool tray",PlRound:"Round pot",PlSquare:"Square",PlHex:"Hexagon",PlTwist:"Twisted",PlTall:"Tall tube",OrgCable:"Cable clips",OrgPen:"Pen tray",OrgCaddy:"Desk caddy",OrgDock:"Charging dock",OrgGrid:"Drawer grid",StdPhone:"Phone",StdTab:"Tablet",StdUp:"Upright",StdLow:"Low angle"},
+cs:{sSize:"Velikost",sDiv:"Přepážky",sLayout:"Rozložení",sHold:"Držák",sEdges:"Hrany",cr:"Zaoblení rohů",er:"Zaoblení hran",g_vase:"Váza",gd_vase:"Soustružené vázy",g_bin:"Gridfinity box",gd_bin:"Mřížka 42 mm, přepážky, stohovací lem",g_plt:"Květináč",gd_plt:"Od kulatého po šestiúhelníkový, s odtokem",g_org:"Organizér",gd_org:"Držáky kabelů, podnosy a mřížky",g_std:"Stojánek na telefon a tablet",gd_std:"Nastavitelný sklon a tloušťka zařízení",
+ wc:"Buněk na šířku",dc:"Buněk do hloubky",hu:"Jednotky výšky",dx:"Přepážky na šířku",dz:"Přepážky do hloubky",lip:"Stohovací lem",rt:"Poloměr nahoře",hole:"Odtokový otvor",cols:"Sloupce",rows:"Řady",cw:"Šířka přihrádky",cd:"Hloubka přihrádky",front:"Přední stěna",grip:"Přidržovací lem",sw:"Šířka stojánku",dt:"Tloušťka zařízení",bh:"Výška opěrky",tilt:"Sklon",lh:"Výška zarážky",lt:"Tloušťka zarážky",pt:"Tloušťka desky",bkt:"Tloušťka opěrky",
+ Bin1:"Box 1×1",Bin2:"2×2 hluboký",Bin3:"3×1 s přepážkami",Bin4:"Na nářadí",PlRound:"Kulatý",PlSquare:"Hranatý",PlHex:"Šestiúhelník",PlTwist:"Zkroucený",PlTall:"Vysoký",OrgCable:"Držáky kabelů",OrgPen:"Na tužky",OrgCaddy:"Stolní",OrgDock:"Nabíječka",OrgGrid:"Mřížka",StdPhone:"Telefon",StdTab:"Tablet",StdUp:"Svislý",StdLow:"Nízký sklon"}};
 /* ---------- viewer ---------- */
 const cv=document.getElementById("c"),view=document.getElementById("view");
 const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
@@ -132,9 +237,12 @@ scene.add(new THREE.HemisphereLight(0xdff5ee,0x10201f,.9));
 const sun=new THREE.DirectionalLight(0xffffff,.9);sun.position.set(120,220,160);scene.add(sun);
 const mat=new THREE.MeshStandardMaterial({color:0x8fd0bd,roughness:.35,metalness:.05,side:THREE.DoubleSide});
 const mesh=new THREE.Mesh(new THREE.BufferGeometry(),mat);scene.add(mesh);
+mat.polygonOffset=true;mat.polygonOffsetFactor=1;mat.polygonOffsetUnits=1;
+const wm=new THREE.LineBasicMaterial({color:0x8fd0bd,transparent:true,opacity:.85,depthTest:false});
+const wf=new THREE.LineSegments(new THREE.BufferGeometry(),wm);wf.visible=false;mesh.add(wf);
 const grid=new THREE.Mesh(new THREE.CylinderGeometry(120,126,6,96).translate(0,-3,0),new THREE.MeshStandardMaterial({color:0x2a6f63,roughness:.5}));scene.add(grid);
 let th=.7,ph=1.2,dist=420;
-function placeCam(){cam.position.set(dist*Math.sin(ph)*Math.sin(th),dist*Math.cos(ph)+P.h/2*0,dist*Math.sin(ph)*Math.cos(th));cam.position.y+=0;cam.lookAt(0,0,0)}
+function placeCam(){cam.position.set(dist*Math.sin(ph)*Math.sin(th),dist*Math.cos(ph),dist*Math.sin(ph)*Math.cos(th));cam.position.y+=0;cam.lookAt(0,0,0)}
 function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(view);
 const ptrs=new Map();let pinch=0;
@@ -149,19 +257,22 @@ cv.addEventListener("pointermove",e=>{
 cv.addEventListener("wheel",e=>{e.preventDefault();dist=Math.min(900,Math.max(120,dist*(1+e.deltaY*.001)))},{passive:false});
 const spin=document.getElementById("spin");
 (function loop(){requestAnimationFrame(loop);if(spin.checked&&!ptrs.size)th+=.004;placeCam();renderer.render(scene,cam)})();
-document.getElementById("wire").onchange=e=>mat.wireframe=e.target.checked;
+document.getElementById("wire").onchange=e=>{wf.visible=e.target.checked;mat.visible=!e.target.checked;if(wf.visible)updWire()};
 
 function refresh(){
-  mesh.geometry.dispose();mesh.geometry=buildMesh();
-  mesh.position.y=-P.h/2;grid.position.y=-P.h/2;
-  ovf=paint();eh.value=P.h;showInfo();
-  try{history.replaceState(null,"","#"+new URLSearchParams(P))}catch(e){}
+  mesh.geometry.dispose();mesh.geometry=buildMesh();sb.geometry=sf.geometry=mesh.geometry;if(wf.visible)updWire();
+  const hh=G.height(P),bb=new THREE.Box3().setFromBufferAttribute(mesh.geometry.attributes.position),
+    rr=Math.max(bb.max.x-bb.min.x,bb.max.z-bb.min.z)/2,sc=Math.max(.5,rr*1.25/120);
+  mesh.position.y=-hh/2;grid.position.y=-hh/2;grid.scale.set(sc,1,sc);
+  const fs=G.id==="plt"&&P.res<20&&P.cr<=0;if(mat.flatShading!==fs){mat.flatShading=fs;mat.needsUpdate=true}
+  ovf=paint();eh.value=hh;showInfo();
+  try{history.replaceState(null,"","#"+new URLSearchParams({g:G.id,...P}))}catch(e){}
 }
 
 /* ---------- UI ---------- */
-const GRP={h:"sShape",ribs:"sSurf",wall:"sWalls"};
+let GRP={};
 const sl=document.getElementById("sliders");
-DEF.forEach(([k,label,min,max,step,unit])=>{
+function buildSliders(){sl.innerHTML="";DEF.forEach(([k,label,min,max,step,unit])=>{
   if(GRP[k])sl.insertAdjacentHTML("beforeend",`<h2 data-i="${GRP[k]}"></h2>`);const d=document.createElement("div");d.className="row";
   d.innerHTML=`<label for="s_${k}" data-i="${k}"></label><span class="val"><input type="number" id="n_${k}" min="${min}" max="${max}" step="${step}" aria-label="${label}"><em>${unit}</em></span><input type="range" id="s_${k}" min="${min}" max="${max}" step="${step}">`;
   sl.appendChild(d);
@@ -169,11 +280,11 @@ DEF.forEach(([k,label,min,max,step,unit])=>{
   nb.oninput=()=>{const v=parseFloat(nb.value);if(isFinite(v)&&v>=min&&v<=max){P[k]=v;i.value=v;refresh()}};
   nb.onchange=()=>{let v=parseFloat(nb.value);if(!isFinite(v))v=P[k];v=Math.min(max,Math.max(min,v));P[k]=v;nb.value=v;syncAll();refresh()};
   i.oninput=()=>{P[k]=+i.value;sync(k);refresh()};
-});
+});}
 function sync(k){const n=document.getElementById("n_"+k);if(document.activeElement!==n)n.value=P[k]}
 function syncAll(){DEF.forEach(([k])=>{document.getElementById("s_"+k).value=P[k];sync(k)})}
-Object.keys(PRESETS).forEach(n=>{const b=document.createElement("button");b.innerHTML=sil(PRESETS[n])+`<span data-i="${n}"></span>`;
-  b.onclick=()=>{Object.assign(P,PRESETS[n]);syncAll();refresh()};document.getElementById("presets").appendChild(b)});
+function buildPresets(){const pe=document.getElementById("presets");pe.innerHTML="";Object.keys(PRESETS).forEach(n=>{const b=document.createElement("button");b.innerHTML=(G.sil?sil(PRESETS[n]):"")+`<span data-i="${n}"></span>`;
+  b.onclick=()=>{Object.assign(P,PRESETS[n]);syncAll();refresh()};pe.appendChild(b)})}
 function sil(p){const pts=[[0,p.rb],[p.tm,p.rm],[.82,p.rn],[1,p.rl]];
   const R=t=>{let k=0;while(k<2&&t>pts[k+1][0])k++;const a=pts[k],b=pts[k+1],u=(t-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*(1-Math.cos(Math.PI*u))/2};
   const sc=44/p.h;let l="",r="";
@@ -195,7 +306,7 @@ function exportSTL(){
     const l=Math.hypot(nx,ny,nz)||1;[nx,ny,nz].forEach((q,i)=>dv.setFloat32(o+i*4,q/l,true));
     [a,b,c].forEach((q,k)=>q.forEach((x,i)=>dv.setFloat32(o+12+k*12+i*4,x,true)));
   }
-  save(new Blob([buf],{type:"model/stl"}),"vase.stl");
+  save(new Blob([buf],{type:"model/stl"}),G.id+".stl");
 }
 function exportGLB(){
   const g=mesh.geometry,pos=g.attributes.position.array,nor=g.attributes.normal.array,ix=g.index.array;
@@ -217,7 +328,7 @@ function exportGLB(){
   let o=20+jl;dv.setUint32(o,bin,true);dv.setUint32(o+4,0x004E4942,true);o+=8;
   u8.set(new Uint8Array(pos.buffer,pos.byteOffset,pl),o);u8.set(new Uint8Array(nor.buffer,nor.byteOffset,nl),o+pl);
   u8.set(new Uint8Array(ix.buffer,ix.byteOffset,il),o+pl+nl);
-  save(new Blob([out],{type:"model/gltf-binary"}),"vase.glb");
+  save(new Blob([out],{type:"model/gltf-binary"}),G.id+".glb");
 }
 document.getElementById("stl").onclick=exportSTL;
 document.getElementById("glb").onclick=exportGLB;
@@ -230,52 +341,69 @@ try{lang=localStorage.lang;theme=localStorage.theme}catch(e){}
 lang=lang||((navigator.language||"").startsWith("cs")?"cs":"en");
 if(!L[lang])lang="en";
 theme=theme||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");
-const t=k=>L[lang][k]||k,S=()=>(+eh.value||P.h)/P.h;
+const t=k=>L[lang][k]||k,HT=()=>G.height(P),S=()=>(+eh.value||HT())/HT();
 function tr(){document.documentElement.lang=lang;
   document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
   $("lang").textContent=lang==="en"?"Čeština":"English";
   $("theme").textContent=t(theme==="dark"?"light":"dark");showInfo()}
 function applyTheme(){document.documentElement.dataset.theme=theme;
-  scene.background=new THREE.Color(theme==="light"?0xdfe9e6:0x0e1618);grid.material.color.set(theme==="light"?0x2a6f63:0x2c474c);
+  scene.background=new THREE.Color(theme==="light"?0xdfe9e6:0x0e1618);grid.material.color.set(theme==="light"?0x2a6f63:0x2c474c);wm.color.set(theme==="light"?0x1f6f5c:0x8fd0bd);
   try{localStorage.theme=theme}catch(e){}}
 const WARN=new THREE.Color(0xe0533d);
 mat.vertexColors=true;mat.color.set(0xffffff);
 function paint(){
   const g=mesh.geometry,p=g.attributes.position.array,n=g.attributes.normal.array,c=new THREE.Color(glz.value),col=new Float32Array(p.length),N=p.length/3;let bad=0;
   for(let i=0;i<N;i++){const f=n[i*3+1]<-.707&&p[i*3+1]>.5;if(f)bad++;(f&&over.checked?WARN:c).toArray(col,i*3)}
-  g.setAttribute("color",new THREE.BufferAttribute(col,3));return bad/N}
+  capM.color.copy(c).multiplyScalar(.6);g.setAttribute("color",new THREE.BufferAttribute(col,3));return bad/N}
 function showInfo(){
   const g=mesh.geometry,p=g.attributes.position.array,ix=g.index.array;let v=0,mx=0;
   for(let f=0;f<ix.length;f+=3){const a=ix[f]*3,b=ix[f+1]*3,c=ix[f+2]*3;
     v+=(p[a]*(p[b+1]*p[c+2]-p[b+2]*p[c+1])+p[a+1]*(p[b+2]*p[c]-p[b]*p[c+2])+p[a+2]*(p[b]*p[c+1]-p[b+1]*p[c]))/6}
-  for(let i=0;i<p.length;i+=3)mx=Math.max(mx,Math.hypot(p[i],p[i+2]));
+  for(let i=0;i<p.length;i+=3)mx=Math.max(mx,Math.abs(p[i]));
   const s=S(),cm=Math.abs(v)*s**3/1000;
   st.textContent=`${(ix.length/3).toLocaleString()} ${t("tri")} · ${t("w")} ${(2*mx*s).toFixed(0)} mm`;
   inf.textContent=`${t("vol")}: ${cm.toFixed(1)} cm³ · ${t("mass")}: ${(cm*1.24).toFixed(0)} g · ${t("ovl")}: ${(ovf*100).toFixed(0)} %`}
 function snap(){const s=JSON.stringify(P);if(H[hi]===s)return;H=H.slice(0,hi+1);H.push(s);hi=H.length-1}
 function go(d){const n=hi+d;if(n<0||n>=H.length)return;hi=n;Object.assign(P,JSON.parse(H[hi]));syncAll();refresh()}
+function wireGeo(g){const p=g.attributes.position.array,ix=g.index.array,E=new Map(),d=(a,b)=>{const x=p[a*3]-p[b*3],y=p[a*3+1]-p[b*3+1],z=p[a*3+2]-p[b*3+2];return x*x+y*y+z*z};
+  for(let f=0;f<ix.length;f+=3){const v=[ix[f],ix[f+1],ix[f+2]],l=[d(v[0],v[1]),d(v[1],v[2]),d(v[2],v[0])],m=l[0]>=l[1]&&l[0]>=l[2]?0:l[1]>=l[2]?1:2;
+    for(let k=0;k<3;k++){const a=v[k],b=v[(k+1)%3],key=a<b?a*262144+b:b*262144+a;let e=E.get(key);if(!e){e={a,b,n:0,L:0};E.set(key,e)}e.n++;if(k===m)e.L++}}
+  const out=[];E.forEach(e=>{if(e.n===2&&e.L===2)return;out.push(p[e.a*3],p[e.a*3+1],p[e.a*3+2],p[e.b*3],p[e.b*3+1],p[e.b*3+2])});
+  const w=new THREE.BufferGeometry();w.setAttribute("position",new THREE.BufferAttribute(new Float32Array(out),3));return w}
+function updWire(){LOW=true;const g=buildMesh();LOW=false;wf.geometry.dispose();wf.geometry=wireGeo(g);g.dispose()}
 const plane=new THREE.Plane(new THREE.Vector3(0,0,-1),0);renderer.localClippingEnabled=true;
-$("cut").onchange=e=>{mat.clippingPlanes=e.target.checked?[plane]:[];mat.needsUpdate=true};
+const stM=(side,op)=>new THREE.MeshBasicMaterial({depthWrite:false,depthTest:false,colorWrite:false,stencilWrite:true,stencilFunc:THREE.AlwaysStencilFunc,side,clippingPlanes:[plane],stencilFail:op,stencilZFail:op,stencilZPass:op});
+const sb=new THREE.Mesh(mesh.geometry,stM(THREE.BackSide,THREE.IncrementWrapStencilOp)),sf=new THREE.Mesh(mesh.geometry,stM(THREE.FrontSide,THREE.DecrementWrapStencilOp));
+sb.renderOrder=sf.renderOrder=1;mesh.add(sb);mesh.add(sf);
+const capM=new THREE.MeshStandardMaterial({color:0x2a6f63,roughness:.6,metalness:0,stencilWrite:true,stencilRef:0,stencilFunc:THREE.NotEqualStencilFunc,stencilFail:THREE.ReplaceStencilOp,stencilZFail:THREE.ReplaceStencilOp,stencilZPass:THREE.ReplaceStencilOp});
+const cap=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),capM);cap.renderOrder=1.1;cap.lookAt(0,0,1);cap.onAfterRender=r=>r.clearStencil();scene.add(cap);
+mesh.renderOrder=6;wf.renderOrder=7;sb.visible=sf.visible=cap.visible=false;
+$("cut").onchange=e=>{mat.clippingPlanes=wm.clippingPlanes=e.target.checked?[plane]:[];mat.needsUpdate=wm.needsUpdate=true;sb.visible=sf.visible=cap.visible=e.target.checked};
 over.onchange=()=>{ovf=paint();showInfo()};
 glz.oninput=paint;eh.oninput=showInfo;
 sl.addEventListener("change",snap);$("presets").addEventListener("click",snap);
 $("undo").onclick=()=>go(-1);$("redo").onclick=()=>go(1);
 $("lang").onclick=()=>{lang=lang==="en"?"cs":"en";try{localStorage.lang=lang}catch(e){}tr()};
 $("theme").onclick=()=>{theme=theme==="dark"?"light":"dark";applyTheme();tr()};
-$("rnd").onclick=()=>{const r=(a,b)=>Math.round(a+Math.random()*(b-a));
+$("rnd").onclick=()=>{if(G.id!=="vase"){DEF.forEach(([k,,a,b,sp])=>{P[k]=+(Math.round((a+Math.random()*(b-a))/sp)*sp).toFixed(2)});syncAll();refresh();snap();return}const r=(a,b)=>Math.round(a+Math.random()*(b-a));
   Object.assign(P,{h:r(100,220),rb:r(22,50),rm:r(30,70),tm:+(.25+Math.random()*.35).toFixed(2),rn:r(16,45),rl:r(20,50),ribs:r(0,3)?r(3,24):0,rd:+(Math.random()*.15).toFixed(2),tw:r(-3,3)*60,wall:2.4,floor:3,res:Math.max(P.res,96)});
   syncAll();refresh();snap()};
 $("copy").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(location.href).then(()=>{$("copy").lastElementChild.textContent=t("copied");setTimeout(tr,1200)}).catch(()=>{})};
-$("save").onclick=()=>save(new Blob([JSON.stringify({...P,glaze:glz.value})],{type:"application/json"}),"vase-design.json");
+$("save").onclick=()=>save(new Blob([JSON.stringify({g:G.id,...P,glaze:glz.value})],{type:"application/json"}),G.id+"-design.json");
 $("load").onclick=()=>$("file").click();
 $("file").onchange=e=>{const f=e.target.files[0];if(!f)return;
-  f.text().then(x=>{try{const d=JSON.parse(x);DEF.forEach(([k])=>{if(isFinite(+d[k]))P[k]=+d[k]});if(d.glaze)glz.value=d.glaze;syncAll();refresh();snap()}catch(err){}});e.target.value=""};
-$("png").onclick=()=>{renderer.render(scene,cam);cv.toBlob(b=>save(b,"vase.png"))};
+  f.text().then(x=>{try{const d=JSON.parse(x);if(GENS[d.g]&&d.g!==G.id)useGen(d.g);DEF.forEach(([k])=>{if(isFinite(+d[k]))P[k]=+d[k]});if(d.glaze)glz.value=d.glaze;syncAll();refresh();snap()}catch(err){}});e.target.value=""};
+$("png").onclick=()=>{renderer.render(scene,cam);cv.toBlob(b=>save(b,G.id+".png"))};
 $("obj").onclick=()=>{const p=mesh.geometry.attributes.position.array,ix=mesh.geometry.index.array,s=S(),o=["# Vase Forge"];
   for(let i=0;i<p.length;i+=3)o.push(`v ${(p[i]*s).toFixed(4)} ${(-p[i+2]*s).toFixed(4)} ${(p[i+1]*s).toFixed(4)}`);
   for(let f=0;f<ix.length;f+=3)o.push(`f ${ix[f]+1} ${ix[f+1]+1} ${ix[f+2]+1}`);
-  save(new Blob([o.join("\n")],{type:"text/plain"}),"vase.obj")};
-try{new URLSearchParams(location.hash.slice(1)).forEach((v,k)=>{if(k in P&&isFinite(+v))P[k]=+v})}catch(e){}
+  save(new Blob([o.join("\n")],{type:"text/plain"}),G.id+".obj")};
+try{const q=new URLSearchParams(location.hash.slice(1));useGen(GENS[q.get("g")]?q.get("g"):"vase",true);q.forEach((v,k)=>{if(k in P&&isFinite(+v))P[k]=+v})}catch(e){useGen("vase",true)}
+Object.assign(L.en,NT.en);Object.assign(L.cs,NT.cs);
+Object.values(GENS).forEach(g=>{const b=document.createElement("button");b.innerHTML=`<b data-i="g_${g.id}"></b><small data-i="gd_${g.id}"></small>`;b.onclick=()=>useGen(g.id);$("glist").appendChild(b)});
+function useGen(id,init){G=GENS[id];P={...G.P};DEF=G.DEF;PRESETS=G.PRESETS;GRP=G.GRP;buildMesh=G.build;
+  $("gname").dataset.i="g_"+id;buildSliders();buildPresets();
+  if(!init){H=[];hi=-1;syncAll();refresh();snap();tr();$("gens").open=false}}
 syncAll();applyTheme();refresh();snap();tr();resize();
 </script>
 </body>
