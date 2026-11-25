@@ -33,12 +33,6 @@ A browser-based vase designer. Shape a vase with sliders, watch it update in 3D,
 - Light and dark mode
 - Your language and theme choices are remembered
 
-## Usage
-
-Open `index.html` in a browser. No install is needed, but you need an internet connection, because three.js is loaded from a CDN.
-
-To host it on GitHub Pages, name the file `index.html` in the repository root, then choose your branch under **Settings → Pages**.
-
 ## How it works
 
 The vase is a lathe surface. A smooth radius profile is swept around the vertical axis and modulated by a rib and twist function. An inner surface, a rim and a floor close the mesh into a solid. The STL, GLB and OBJ writers are written by hand, without export libraries.
