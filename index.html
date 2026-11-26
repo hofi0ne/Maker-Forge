@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0e1618">
+<meta name="theme-color" content="#07040a">
 <title>Maker Forge</title>
 <style>
-:root{--bg:#dfe9e6;--panel:#fbfdfc;--ink:#13211f;--mute:#586e69;--line:#cfdcd8;--accent:#1f8a70;--on:#fff;--serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif}
-:root[data-theme=dark]{--bg:#0e1618;--panel:#142024;--ink:#e6efec;--mute:#8fa7a3;--line:#24383d;--accent:#8fd0bd;--on:#0b1a17}
+:root{--bg:#f7e9ef;--panel:#fff8fb;--ink:#2a0f1f;--mute:#8a5a72;--line:#ecd0dd;--accent:#c8336f;--on:#fff;--serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif}
+:root[data-theme=dark]{--bg:#07040a;--panel:#110a12;--ink:#ffeef5;--mute:#c49ab0;--line:#2e1a28;--accent:#ff7ab0;--on:#1a0712}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--panel);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
@@ -74,11 +74,24 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 #glist b{font-weight:600}
 #glist small{color:var(--mute);font-size:12px}
 @media(prefers-reduced-motion:reduce){#gens summary::after{transition:none}}
+#intro{position:fixed;inset:0;z-index:100;background:#050307;color:#ffeef5;overflow:hidden;transition:opacity .9s ease,transform .9s ease}
+#intro.out{opacity:0;transform:scale(1.04);pointer-events:none}
+#intro canvas{position:absolute;inset:0}
+#ig{filter:blur(5px) brightness(1.3);mix-blend-mode:screen;opacity:.75}
+.leaving .itxt{opacity:0;transition:opacity .5s}
+.itxt{position:absolute;z-index:2;left:0;right:0;bottom:6vh;padding:0 20px;text-align:center}
+.itxt h2{margin:0;padding:0;border:0;font:italic 400 clamp(32px,6vw,54px)/1.1 var(--serif);text-shadow:0 0 26px rgba(255,110,170,.55)}
+.itxt p{margin:8px 0 20px;color:#f5a3c6;font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.3em}
+#enter{opacity:0;pointer-events:none;transition:opacity .6s;border:0;border-radius:999px;padding:11px 26px;background:#ff7ab0;color:#1a0712;font:inherit;font-weight:600;cursor:pointer}
+#enter.show{opacity:1;pointer-events:auto}
+@media(prefers-reduced-motion:reduce){#intro{transition:none}}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 @media(min-width:860px){body{flex-direction:row-reverse}#view{flex:1;min-height:0}#panel{flex:0 0 380px;border-right:1px solid var(--line)}#presets{bottom:38px}}
 </style>
 </head>
 <body>
+<div id="intro" role="dialog" aria-label="Maker Forge"><canvas id="ig"></canvas><canvas id="ic"></canvas>
+  <div class="itxt"><h2>Maker Forge</h2><p data-i="intro_tag">let it bloom</p><button id="enter" data-i="intro_enter">Enter the forge</button></div></div>
 <div id="view"><canvas id="c"></canvas>
   <header><h1>Maker Forge</h1>
     <nav class="util"><button id="lang"></button><button id="theme"></button><button id="undo" data-i="undo"></button><button id="redo" data-i="redo"></button><button id="rnd" data-i="rnd"></button></nav></header>
@@ -86,13 +99,90 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 <aside id="panel"><details id="gens"><summary><span id="gname" data-i="g_vase"></span></summary><div id="glist"></div></details><div id="sliders"></div>
   <h2 data-i="sLook"></h2>
   <div class="opt"><label><input type="checkbox" id="wire"><span data-i="wire"></span></label><label><input type="checkbox" id="spin" checked><span data-i="spin"></span></label><label><input type="checkbox" id="cut"><span data-i="cut"></span></label><label><input type="checkbox" id="over"><span data-i="over"></span></label></div>
-  <div class="row"><label for="glz" data-i="glaze"></label><input type="color" id="glz" value="#8fd0bd"></div>
+  <div class="row"><label for="glz" data-i="glaze"></label><input type="color" id="glz" value="#f08cb8"></div>
   <h2 data-i="sOut"></h2>
   <div class="row"><label for="eh" data-i="eh"></label><input type="number" id="eh" min="10" max="1000"></div>
   <div class="act"><button class="pill main" id="stl" data-i="stl"></button><button class="pill" id="glb" data-i="glb"></button><button class="pill" id="obj" data-i="obj"></button></div>
   <div id="inf"></div>
   <nav class="tools"><button id="copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span data-i="copy"></span></button><button id="save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/></svg><span data-i="save"></span></button><button id="load"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4l4 4M5 19h14"/></svg><span data-i="load"></span></button><button id="png"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4 4 3 3-2 4 3"/></svg><span data-i="png"></span></button><input type="file" id="file" accept=".json" hidden></nav>
 </aside>
+<script>
+function roseField(t,cols,rows,cw,ch,W,H,reduce,wind){
+  const LU=new Float32Array(cols*rows).fill(-1),ZB=new Float32Array(cols*rows).fill(-1e9),ID=new Int16Array(cols*rows).fill(-1);
+  const b=reduce?1:Math.min(1,t/4.6),bloom=1-Math.pow(1-b,3),rot=(reduce?.5:t*.3)+.4,tilt=1.0;
+  const cr=Math.cos(rot),sr=Math.sin(rot),ct=Math.cos(tilt),st=Math.sin(tilt);
+  const S=.4*Math.min(W,H)/1.5,NP=36,SS=38,UU=32,sm=x=>x*x*(3-2*x),cl=x=>Math.max(0,Math.min(1,x));
+  for(let i=0;i<NP;i++){
+    const q=i/(NP-1),th=i*2.39996,cs=Math.cos(th),sn=Math.sin(th),o=sm(cl((bloom-(1-q)*.4)/.6));
+    const rho0=(.04+.5*Math.pow(q,.85))*(.55+.45*o),L=(.5+.8*Math.pow(q,.6))*(.35+.65*Math.min(1,bloom*1.3)),Wd=(.28+.5*q)*(.6+.4*o);
+    const phi=(.1+.08*q)*(1-o)+(.2+1.35*Math.pow(q,.8))*o,ds=L/SS;
+    const rj=(i*.6180339)%1,pd=(1-q)*.7+rj*.3,bx=rho0*cs,bz=rho0*sn,BX=bx*cr+bz*sr,BZ=-bx*sr+bz*cr,BY=-.45*ct-BZ*st;
+    let r=rho0,y=0;
+    for(let a=0;a<=SS;a++){
+      const s=a/SS,cv=Math.max(0,s-.78),ang=phi*Math.pow(s,.9)+o*6.6*cv*cv,
+        w=Wd*Math.pow(Math.sin(Math.PI*Math.pow(s,.62)),.7),Nr=-Math.cos(ang),Ny=Math.sin(ang),ao=.38+.62*Math.pow(s,.7);
+      for(let k=0;k<UU;k++){
+        const u=-1+2*k/(UU-1),d=u*w,lift=.7*d*d,pr=r+lift*Nr,py=y+lift*Ny;
+        const x=pr*cs-d*sn,z=pr*sn+d*cs,yy=py-.45,tl=.98*d;
+        let nx=Nr*cs+sn*tl,ny=Ny,nz=Nr*sn-cs*tl;const nl=Math.hypot(nx,ny,nz)||1;nx/=nl;ny/=nl;nz/=nl;
+        const X1=x*cr+z*sr,Z1=-x*sr+z*cr,Y2=yy*ct-Z1*st,Z2=yy*st+Z1*ct;
+        const nX=nx*cr+nz*sr,nZ1=-nx*sr+nz*cr,nY=ny*ct-nZ1*st,nZ=ny*st+nZ1*ct;
+        const dot=Math.abs(nX*-.35+nY*.6+nZ*.72)/.99;
+        const edge=Math.max(Math.pow(Math.abs(u),10),Math.pow(s,14)),lum=cl(Math.pow(.88*((.14+.86*dot)*ao*(.42+.58*q)*(.65+.35*cl((Z2+1.1)/2.2))+.5*edge*ao+.04),1.15));
+        let X=X1,Yv=Y2,fade=1;
+        if(wind>0){const rs=((i*131+a*17+k*31)%97)/97,ts=cl((wind-pd-(1-s)*.35-rs*.25)/1.5);
+          if(ts>0){if(((i*53+a*29+k*7)%89)/89<ts*.55)continue;
+            const es=Math.pow(ts,1.7),th2=es*(2.2+rj*2.4),fl=Math.cos(es*(3+rj*3)),c2=Math.cos(th2),s2=Math.sin(th2),rx=X-BX,ry=(Yv-BY)*fl;
+            X=BX+rx*c2-ry*s2+es*(5.2+rj*1.8);Yv=BY+rx*s2+ry*c2+es*.9+Math.sin(wind*3.1+i*1.7)*es*.6+Math.sin(wind*7+i*2.3+s*3)*.25*es;fade=1-.6*ts}}
+        const ix=Math.floor(cols/2+X*S/cw),iy=Math.floor((H*.47-Yv*S)/ch);
+        if(ix>=0&&ix<cols&&iy>=0&&iy<rows){const c=iy*cols+ix;if(Z2>ZB[c]){ZB[c]=Z2;LU[c]=lum*fade;ID[c]=i}}
+      }
+      r+=Math.sin(ang)*ds;y+=Math.cos(ang)*ds;
+    }
+  }
+  const O=LU.slice();
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const c=y*cols+x;if(O[c]<0)continue;const z=ZB[c];let occ=false,edge=false;
+    for(let d=0;d<4;d++){const xx=x+(d===0?-1:d===1?1:0),yy=y+(d===2?-1:d===3?1:0);
+      if(xx<0||xx>=cols||yy<0||yy>=rows)continue;const n=yy*cols+xx;
+      if(O[n]>=0&&ID[n]!==ID[c]){if(ZB[n]>z)occ=true;else edge=true}}
+    LU[c]=cl(O[c]*(occ?.45:edge?1.45:1))}
+  return LU}
+(function(){
+  const el=document.getElementById("intro"),cv=document.getElementById("ic"),gl=document.getElementById("ig"),ctx=cv.getContext("2d"),gx=gl.getContext("2d"),en=document.getElementById("enter");
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches,NB=14;
+  const RAMP=[" ",".,'",":;-","i!l","t+=","ox*","zXO","#%&","@8M"],STOPS=[[120,24,78],[190,40,110],[240,86,152],[255,156,200],[255,214,232],[255,246,250]];
+  let cols,rows,cw,ch,dpr,cwp,chp,atlas,idxOf={},W,H,done=false;const t0=performance.now();
+  function col(l){const x=l*(STOPS.length-1),i=Math.min(STOPS.length-2,Math.floor(x)),f=x-i,a=STOPS[i],b=STOPS[i+1];return a.map((v,k)=>Math.round(v+(b[k]-v)*f))}
+  function setup(){
+    dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+    cols=Math.max(72,Math.min(300,Math.floor(W/6.5)));cw=W/cols;const fs=cw/.6;ch=fs*1.18;rows=Math.floor(H/ch);
+    [cv,gl].forEach(c=>{c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);c.style.width=W+"px";c.style.height=H+"px"});
+    cwp=Math.ceil(cw*dpr);chp=Math.ceil(ch*dpr);
+    const chars=[...new Set(RAMP.join(""))].filter(c=>c!==" ");
+    atlas=document.createElement("canvas");atlas.width=chars.length*cwp;atlas.height=NB*chp;
+    const a=atlas.getContext("2d");a.font=Math.round(fs*dpr)+"px ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace";a.textAlign="center";
+    chars.forEach((c,ci)=>{idxOf[c]=ci;for(let b=0;b<NB;b++){a.fillStyle="rgb("+col((b+.5)/NB).join(",")+")";a.fillText(c,ci*cwp+cwp/2,b*chp+chp*.78)}})}
+  function draw(t,w){
+    ctx.clearRect(0,0,cv.width,cv.height);gx.clearRect(0,0,gl.width,gl.height);
+    const F=roseField(t,cols,rows,cw,ch,W,H,reduce,w||0);
+    for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){const l=F[iy*cols+ix];if(l<0)continue;
+      const lev=Math.max(2,Math.min(8,Math.floor(l*8.99)));
+      const v=RAMP[lev],h=((ix*73856093)^(iy*19349663))>>>0,c=v[(h+Math.floor(t*2.4+h%7))%v.length],bk=Math.min(NB-1,Math.floor((.2+.8*l)*NB));
+      ctx.drawImage(atlas,idxOf[c]*cwp,bk*chp,cwp,chp,Math.round(ix*cw*dpr),Math.round(iy*ch*dpr),cwp,chp)}
+    gx.drawImage(cv,0,0)}
+  let blow=0;
+  function close(){if(done||blow)return;if(reduce){done=true;el.classList.add("out");setTimeout(()=>el.remove(),1000);return}blow=performance.now();el.classList.add("leaving")}
+  function loop(now){if(done)return;const t=(now-t0)/1000,w=blow?(now-blow)/1000:0;
+    draw(t,w);if(t>3.8)en.classList.add("show");if(!blow&&t>10)close();
+    if(w>2.4)el.classList.add("out");if(w>3.7){done=true;el.remove();return}requestAnimationFrame(loop)}
+  setup();
+  if(reduce){draw(0);en.classList.add("show")}else requestAnimationFrame(loop);
+  addEventListener("resize",()=>{if(!done){setup();if(reduce)draw(0)}});
+  en.onclick=close;
+  addEventListener("keydown",e=>{if(e.key==="Escape"||e.key==="Enter"||e.key===" ")close()});
+  el.addEventListener("click",()=>{if(en.classList.contains("show"))close()});
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 let P={h:160,rb:36,rm:56,tm:.4,rn:28,rl:34,ribs:12,rd:.07,tw:90,wall:2.4,floor:3,res:96,er:2};
@@ -222,10 +312,10 @@ const GENS={
  std:{id:"std",P:{...SB},build:buildStand,height:p=>p.pt+p.bh,GRP:{sw:"sSize",dt:"sHold"},
   DEF:[["sw","Stand width",60,220,1,"mm"],["bh","Back height",40,150,1,"mm"],["tilt","Tilt",5,45,1,"°"],["pt","Plate thickness",3,10,.5,"mm"],["dt","Device thickness",5,30,1,"mm"],["lh","Lip height",6,30,1,"mm"],["lt","Lip thickness",3,10,.5,"mm"],["bkt","Back thickness",3,10,.5,"mm"]],
   PRESETS:{StdPhone:{...SB},StdTab:{...SB,sw:200,dt:14,bh:120,tilt:25,lh:18,lt:6,pt:5,bkt:6},StdUp:{...SB,sw:70,dt:13,bh:90,tilt:10,lh:14},StdLow:{...SB,sw:100,bh:60,tilt:40,lh:10,lt:4}}}};
-const NT={en:{sSize:"Size",sDiv:"Dividers",sLayout:"Layout",sHold:"Holder",sEdges:"Edges",cr:"Corner roundness",er:"Edge roundness",g_vase:"Vase",gd_vase:"Lathe-turned vases",g_bin:"Gridfinity bin",gd_bin:"42 mm grid, dividers, stacking lip",g_plt:"Planter",gd_plt:"Round to hexagonal, with drainage",g_org:"Organizer",gd_org:"Cable clips, trays and drawer grids",g_std:"Phone & tablet stand",gd_std:"Adjustable tilt and device thickness",
+const NT={en:{sSize:"Size",sDiv:"Dividers",sLayout:"Layout",sHold:"Holder",intro_enter:"Enter the forge",intro_tag:"let it bloom",sEdges:"Edges",cr:"Corner roundness",er:"Edge roundness",g_vase:"Vase",gd_vase:"Lathe-turned vases",g_bin:"Gridfinity bin",gd_bin:"42 mm grid, dividers, stacking lip",g_plt:"Planter",gd_plt:"Round to hexagonal, with drainage",g_org:"Organizer",gd_org:"Cable clips, trays and drawer grids",g_std:"Phone & tablet stand",gd_std:"Adjustable tilt and device thickness",
  wc:"Cells wide",dc:"Cells deep",hu:"Height units",dx:"Width dividers",dz:"Depth dividers",lip:"Stacking lip",rt:"Top radius",hole:"Drain hole",cols:"Columns",rows:"Rows",cw:"Slot width",cd:"Slot depth",front:"Front wall",grip:"Retaining lip",sw:"Stand width",dt:"Device thickness",bh:"Back height",tilt:"Tilt",lh:"Lip height",lt:"Lip thickness",pt:"Plate thickness",bkt:"Back thickness",
  Bin1:"1×1 bin",Bin2:"2×2 deep",Bin3:"3×1 divided",Bin4:"Tool tray",PlRound:"Round pot",PlSquare:"Square",PlHex:"Hexagon",PlTwist:"Twisted",PlTall:"Tall tube",OrgCable:"Cable clips",OrgPen:"Pen tray",OrgCaddy:"Desk caddy",OrgDock:"Charging dock",OrgGrid:"Drawer grid",StdPhone:"Phone",StdTab:"Tablet",StdUp:"Upright",StdLow:"Low angle"},
-cs:{sSize:"Velikost",sDiv:"Přepážky",sLayout:"Rozložení",sHold:"Držák",sEdges:"Hrany",cr:"Zaoblení rohů",er:"Zaoblení hran",g_vase:"Váza",gd_vase:"Soustružené vázy",g_bin:"Gridfinity box",gd_bin:"Mřížka 42 mm, přepážky, stohovací lem",g_plt:"Květináč",gd_plt:"Od kulatého po šestiúhelníkový, s odtokem",g_org:"Organizér",gd_org:"Držáky kabelů, podnosy a mřížky",g_std:"Stojánek na telefon a tablet",gd_std:"Nastavitelný sklon a tloušťka zařízení",
+cs:{sSize:"Velikost",sDiv:"Přepážky",sLayout:"Rozložení",sHold:"Držák",intro_enter:"Vstoupit do kovárny",intro_tag:"nech to rozkvést",sEdges:"Hrany",cr:"Zaoblení rohů",er:"Zaoblení hran",g_vase:"Váza",gd_vase:"Soustružené vázy",g_bin:"Gridfinity box",gd_bin:"Mřížka 42 mm, přepážky, stohovací lem",g_plt:"Květináč",gd_plt:"Od kulatého po šestiúhelníkový, s odtokem",g_org:"Organizér",gd_org:"Držáky kabelů, podnosy a mřížky",g_std:"Stojánek na telefon a tablet",gd_std:"Nastavitelný sklon a tloušťka zařízení",
  wc:"Buněk na šířku",dc:"Buněk do hloubky",hu:"Jednotky výšky",dx:"Přepážky na šířku",dz:"Přepážky do hloubky",lip:"Stohovací lem",rt:"Poloměr nahoře",hole:"Odtokový otvor",cols:"Sloupce",rows:"Řady",cw:"Šířka přihrádky",cd:"Hloubka přihrádky",front:"Přední stěna",grip:"Přidržovací lem",sw:"Šířka stojánku",dt:"Tloušťka zařízení",bh:"Výška opěrky",tilt:"Sklon",lh:"Výška zarážky",lt:"Tloušťka zarážky",pt:"Tloušťka desky",bkt:"Tloušťka opěrky",
  Bin1:"Box 1×1",Bin2:"2×2 hluboký",Bin3:"3×1 s přepážkami",Bin4:"Na nářadí",PlRound:"Kulatý",PlSquare:"Hranatý",PlHex:"Šestiúhelník",PlTwist:"Zkroucený",PlTall:"Vysoký",OrgCable:"Držáky kabelů",OrgPen:"Na tužky",OrgCaddy:"Stolní",OrgDock:"Nabíječka",OrgGrid:"Mřížka",StdPhone:"Telefon",StdTab:"Tablet",StdUp:"Svislý",StdLow:"Nízký sklon"}};
 /* ---------- viewer ---------- */
@@ -233,14 +323,14 @@ const cv=document.getElementById("c"),view=document.getElementById("view");
 const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,1,2000);
-scene.add(new THREE.HemisphereLight(0xdff5ee,0x10201f,.9));
+scene.add(new THREE.HemisphereLight(0xffe6f0,0x2a1020,.9));
 const sun=new THREE.DirectionalLight(0xffffff,.9);sun.position.set(120,220,160);scene.add(sun);
-const mat=new THREE.MeshStandardMaterial({color:0x8fd0bd,roughness:.35,metalness:.05,side:THREE.DoubleSide});
+const mat=new THREE.MeshStandardMaterial({color:0xf08cb8,roughness:.35,metalness:.05,side:THREE.DoubleSide});
 const mesh=new THREE.Mesh(new THREE.BufferGeometry(),mat);scene.add(mesh);
 mat.polygonOffset=true;mat.polygonOffsetFactor=1;mat.polygonOffsetUnits=1;
-const wm=new THREE.LineBasicMaterial({color:0x8fd0bd,transparent:true,opacity:.85,depthTest:false});
+const wm=new THREE.LineBasicMaterial({color:0xff9cc4,transparent:true,opacity:.85,depthTest:false});
 const wf=new THREE.LineSegments(new THREE.BufferGeometry(),wm);wf.visible=false;mesh.add(wf);
-const grid=new THREE.Mesh(new THREE.CylinderGeometry(120,126,6,96).translate(0,-3,0),new THREE.MeshStandardMaterial({color:0x2a6f63,roughness:.5}));scene.add(grid);
+const grid=new THREE.Mesh(new THREE.CylinderGeometry(120,126,6,96).translate(0,-3,0),new THREE.MeshStandardMaterial({color:0x3a1830,roughness:.5}));scene.add(grid);
 let th=.7,ph=1.2,dist=420;
 function placeCam(){cam.position.set(dist*Math.sin(ph)*Math.sin(th),dist*Math.cos(ph),dist*Math.sin(ph)*Math.cos(th));cam.position.y+=0;cam.lookAt(0,0,0)}
 function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
@@ -340,14 +430,14 @@ cs:{h:"Výška",rb:"Poloměr podstavy",rm:"Poloměr bříška",tm:"Výška bří
 try{lang=localStorage.lang;theme=localStorage.theme}catch(e){}
 lang=lang||((navigator.language||"").startsWith("cs")?"cs":"en");
 if(!L[lang])lang="en";
-theme=theme||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");
+theme=theme||"dark";
 const t=k=>L[lang][k]||k,HT=()=>G.height(P),S=()=>(+eh.value||HT())/HT();
 function tr(){document.documentElement.lang=lang;
   document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
   $("lang").textContent=lang==="en"?"Čeština":"English";
   $("theme").textContent=t(theme==="dark"?"light":"dark");showInfo()}
 function applyTheme(){document.documentElement.dataset.theme=theme;
-  scene.background=new THREE.Color(theme==="light"?0xdfe9e6:0x0e1618);grid.material.color.set(theme==="light"?0x2a6f63:0x2c474c);wm.color.set(theme==="light"?0x1f6f5c:0x8fd0bd);
+  scene.background=new THREE.Color(theme==="light"?0xf7e9ef:0x07040a);grid.material.color.set(theme==="light"?0x8a2a55:0x3a1830);wm.color.set(theme==="light"?0x9c2a5e:0xff9cc4);
   try{localStorage.theme=theme}catch(e){}}
 const WARN=new THREE.Color(0xe0533d);
 mat.vertexColors=true;mat.color.set(0xffffff);
@@ -375,7 +465,7 @@ const plane=new THREE.Plane(new THREE.Vector3(0,0,-1),0);renderer.localClippingE
 const stM=(side,op)=>new THREE.MeshBasicMaterial({depthWrite:false,depthTest:false,colorWrite:false,stencilWrite:true,stencilFunc:THREE.AlwaysStencilFunc,side,clippingPlanes:[plane],stencilFail:op,stencilZFail:op,stencilZPass:op});
 const sb=new THREE.Mesh(mesh.geometry,stM(THREE.BackSide,THREE.IncrementWrapStencilOp)),sf=new THREE.Mesh(mesh.geometry,stM(THREE.FrontSide,THREE.DecrementWrapStencilOp));
 sb.renderOrder=sf.renderOrder=1;mesh.add(sb);mesh.add(sf);
-const capM=new THREE.MeshStandardMaterial({color:0x2a6f63,roughness:.6,metalness:0,stencilWrite:true,stencilRef:0,stencilFunc:THREE.NotEqualStencilFunc,stencilFail:THREE.ReplaceStencilOp,stencilZFail:THREE.ReplaceStencilOp,stencilZPass:THREE.ReplaceStencilOp});
+const capM=new THREE.MeshStandardMaterial({color:0xf08cb8,roughness:.6,metalness:0,stencilWrite:true,stencilRef:0,stencilFunc:THREE.NotEqualStencilFunc,stencilFail:THREE.ReplaceStencilOp,stencilZFail:THREE.ReplaceStencilOp,stencilZPass:THREE.ReplaceStencilOp});
 const cap=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),capM);cap.renderOrder=1.1;cap.lookAt(0,0,1);cap.onAfterRender=r=>r.clearStencil();scene.add(cap);
 mesh.renderOrder=6;wf.renderOrder=7;sb.visible=sf.visible=cap.visible=false;
 $("cut").onchange=e=>{mat.clippingPlanes=wm.clippingPlanes=e.target.checked?[plane]:[];mat.needsUpdate=wm.needsUpdate=true;sb.visible=sf.visible=cap.visible=e.target.checked};
