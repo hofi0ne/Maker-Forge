@@ -1,111 +1,123 @@
-# Maker-Forge
+# Maker Forge
 
-Maker-Forge is a browser-based 3D vase designer. Adjust the shape with sliders or exact values, preview the result in real time, and export it for 3D printing or use in another 3D application.
+A browser-based 3D object designer for creating and exporting functional printable models. Maker Forge combines an interactive Three.js preview with parameter controls, presets, and direct STL, GLB, OBJ, PNG, and JSON workflows—all in a single `index.html` file.
 
-The project runs entirely in a single `index.html` file and has no build step. It is available online through GitHub Pages:
+**[Open Maker Forge](https://hofi0ne.github.io/Maker-Forge/)**
 
-**https://hofi0ne.github.io/Maker-Forge/**
+![Maker Forge](https://img.shields.io/badge/3D%20Designer-Browser%20Based-ff7ab0)
+![Three.js](https://img.shields.io/badge/Three.js-r128-2b6cb0)
+![Language](https://img.shields.io/badge/Languages-English%20%7C%20Czech-c8336f)
+
+## Generators
+
+Choose a generator from the model menu:
+
+- **Vase** — Hollow rotational forms with ribs, twist, wall thickness, and presets.
+- **Storage Bin** — Grid-based bins with configurable cells, dividers, stacking lips, and dimensions.
+- **Planter** — Round, square, hexagonal, twisted, or tall hollow planters with drainage holes.
+- **Organizer** — Custom rows and columns of slots for desk and cable organization.
+- **Phone Stand** — Adjustable-width stands for phones or tablets.
 
 ## Features
 
-- Shape the vase using height, radii, belly position, and lip controls
-- Adjust ribs, rib depth, twist, wall thickness, floor thickness, and mesh resolution
-- Start with Amphora, Cylinder, Bulb, Twisted, or Fluted presets
-- Randomize designs and move backward or forward through changes
-- Orbit and zoom the live 3D preview
-- Switch between wireframe, cross-section, and auto-rotation modes
-- Highlight overhanging surfaces that may need print support
-- Preview custom glaze colors
-- View estimated volume, solid-PLA mass, dimensions, and overhang percentage
-- Copy shareable design links
-- Save and load designs as JSON
-- Export PNG snapshots
-- Export STL, GLB, or OBJ models
-- Switch between English and Czech
-- Use light or dark interface themes
+- Live WebGL 3D preview with orbit, zoom, and optional auto-rotation
+- Slider and exact-value editing
+- Ready-made presets for every generator
+- Random model generation
+- Undo and redo history
+- Wireframe and cross-section preview modes
+- Optional overhang highlighting
+- Custom glaze or material color
+- Estimated volume, PLA mass, dimensions, triangle count, and overhang percentage
+- Shareable design links
+- Save and load JSON designs
+- PNG screenshots
+- STL, GLB, and OBJ exports
+- English and Czech interface options
+- Light and dark themes
+- Desktop and mobile pointer support
+- No installation or build step
 
 ## Getting Started
 
-### Use the hosted version
+### Use the hosted app
 
-Open [Maker-Forge on GitHub Pages](https://hofi0ne.github.io/Maker-Forge/) in a modern browser.
+Visit [Maker Forge on GitHub Pages](https://hofi0ne.github.io/Maker-Forge/) in a modern browser with WebGL support.
 
 ### Run locally
-
-No installation or build process is required.
 
 ```bash
 git clone https://github.com/hofi0ne/Maker-Forge.git
 cd Maker-Forge
 ```
 
-Open `index.html` directly in a browser, or serve the directory locally:
+Open `index.html` directly, or serve the repository locally:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then visit `http://localhost:8000/`.
+Then open `http://localhost:8000/`.
 
 ## Controls
 
-- Drag the 3D view to orbit.
-- Scroll with a mouse or pinch on a touch screen to zoom.
-- Adjust a slider or enter an exact value in the control panel.
-- Select a preset to apply a ready-made shape.
-- Use **Random** to generate a new design.
-- Use **Undo** and **Redo** to navigate design changes.
-- Set the export height before generating a downloadable model.
+- Drag the preview to orbit.
+- Scroll or pinch to zoom.
+- Adjust sliders or enter exact values in the control panel.
+- Select a preset to load a ready-made configuration.
+- Use **Random** to generate a new variation.
+- Use **Undo** and **Redo** to move through design changes.
+- Set the export height before downloading a 3D model.
+- Use **Share** to copy the current design URL.
 
 ## Export Formats
 
-| Format | Purpose |
+| Format | Description |
 |---|---|
-| STL | Binary STL in millimetres, Z-up, suitable for slicing software |
-| GLB | Binary glTF 3D model with color and material data |
-| OBJ | Text-based 3D mesh for compatible modeling tools |
-| PNG | Screenshot of the current 3D preview |
-| JSON | Vase parameters and glaze color for later editing |
+| **STL** | Binary millimetre-scale, Z-up mesh for slicers and 3D printing |
+| **GLB** | Binary glTF model with material color |
+| **OBJ** | Text-based 3D mesh for modeling applications |
+| **PNG** | Screenshot of the current preview |
+| **JSON** | Generator, parameters, and glaze color for later editing |
+
+Exported STL, GLB, and OBJ geometry is scaled to the selected export height.
 
 ## How It Works
 
-Maker-Forge creates a hollow rotational mesh from a radius profile:
+Maker Forge generates and previews meshes entirely in the browser:
 
-1. The height profile combines the base, belly, neck, and lip radii.
-2. An optional rib pattern and twist modify the outer surface.
-3. A smaller inner profile creates the wall thickness.
-4. The rim and floor close the mesh.
-5. Three.js renders and allows interaction with the generated model.
-
-The STL, GLB, and OBJ exports scale the geometry to the selected export height.
+- The vase generator constructs a hollow rotational profile with an inner wall and floor.
+- The storage bin and organizer generators build printable wall and divider geometry.
+- The planter generator supports radial, polygonal, and twisted meshes.
+- The stand generator creates a tapered device holder from configurable dimensions.
+- Three.js renders, lights, and orbits each generated mesh.
+- Export functions convert the current geometry and selected scale into downloadable formats.
 
 ## Technology
 
-- HTML
+- HTML5
 - CSS
-- JavaScript
-- [Three.js r128](https://threejs.org/) loaded from cdnjs
-- Browser APIs for canvas rendering, clipboard sharing, local storage, and file downloads
+- Vanilla JavaScript
+- [Three.js r128](https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js)
+- WebGL, Canvas, Clipboard, Local Storage, and File APIs
 
 ## Project Structure
 
 ```text
 .
-├── index.html  # Application markup, styles, geometry, UI, and exports
+├── index.html  # Interface, styles, generators, geometry, viewer, and exports
 └── README.md   # Project documentation
 ```
 
 ## Browser Requirements
 
-A modern desktop or mobile browser with WebGL support is required.
+Use a current desktop or mobile browser with WebGL and JavaScript enabled.
 
 ## Contributing
 
-Contributions are welcome. To contribute:
-
 1. Fork the repository.
 2. Create a branch for your change.
-3. Make and test the update in a local browser.
+3. Test it locally in a browser.
 4. Open a pull request describing the improvement.
 
 ## Author
